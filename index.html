@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gráfico BTC/USDT con Múltiples Temporalidades</title>
+    <script src="https://unpkg.com/lightweight-charts@3.8.0/dist/lightweight-charts.standalone.production.js"></script>
+    <script src="binanceapi.js"></script>
+    <script src="indicadores.js"></script>
+    <script src="selectortimeframe.js"></script>
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        html,body{height:100%;width:100%;overflow:hidden;background:#222;color:#fff;font-family:Arial,sans-serif}
+        
+        #app-container {
+            display: flex;
+            flex-direction: column;
+            height: 95vh;
+            width: 100vw;
+        }
+        
+        #controls-top {
+            padding: 5px 10px;
+            background: #1a1a1a;
+            border-bottom: 1px solid #333;
+            z-index: 10;
+        }
+        
+        #alertas {
+            display: flex;
+            justify-content: center;
+        }
+        
+        #alerta {
+            background-color: rgba(0,0,0,0.7);
+            color: #fff;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            margin-right: 10px;
+        }
+        
+        #indicador-alerta {
+            background-color: rgba(0,0,0,0.7);
+            color: #fff;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            margin-right: 10px;
+        }
+        
+        #controls-middle {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 10px;
+            background: #1a1a1a;
+            border-bottom: 1px solid #333;
+            z-index: 10;
+        }
+        
+        #timeframes {
+            display: flex;
+        }
+        
+        .timeframe-btn {
+            background: #333;
+            color: #C3BCDB;
+            border: none;
+            padding: 5px 10px;
+            margin: 0 2px;
+            cursor: pointer;
+            border-radius: 3px;
+        }
+        
+        .timeframe-btn.active {
+            background: #4a4a9c;
+        }
+        
+        #price-info {
+            font-size: 14px;
+            padding: 5px 0;
+            display: flex;
+            align-items: center;
+        }
+        
+        .price-up {
+            color: #26a69a;
+        }
+        
+        .price-down {
+            color: #ef5350;
+        }
+        
+        #chart-container {
+            flex: 1;
+            width: 100%;
+            height: 100%;
+            position: relative;
+        }
+    </style>
+</head>
+<body>
+    <div id="app-container">
+        <div id="controls-top">
+            <div id="alertas">
+                <div id="alerta">EMA20: Cargando...</div>
+                <div id="indicador-alerta">Indicador: Sin datos</div>
+            </div>
+        </div>
+        <div id="controls-middle">
+            <div id="timeframes">
+                <button class="timeframe-btn active" data-time="1m">1m</button>
+                <button class="timeframe-btn" data-time="5m">5m</button>
+                <button class="timeframe-btn" data-time="15m">15m</button>
+                <button class="timeframe-btn" data-time="1h">1h</button>
+                <button class="timeframe-btn" data-time="4h">4h</button>
+                <button class="timeframe-btn" data-time="1d">1d</button>
+            </div>
+            <div id="price-info">BTC/USDT: <span id="current-price">Cargando...</span></div>
+        </div>
+        <div id="chart-container"></div>
+    </div>
+
+    <script src="manejador-alertas2.js"></script>
+    <script>
+        // Instancias globales
+        let chart;
+        let candlestickSeries;
+        let volumeSeries;
+        let rsiSeries;
+        let rsiOverSold;
+        let rsiOverBought;
+        let ema20Series;
+        let ema50Series;
+        let macdSeries;
+        let macdSignalSeries;
+        let macdHistogramSeries;
+        let macdZeroLine;
+        let binanceAPI;
+        let indicadores;
+        let timeframeSelector;
+        let lastPrice = 0;
+        
+        // Inicializar componentes
+        function inicializar() {
+            crearGrafico();
+            binanceAPI = new BinanceAPI();
+            indicadores = new Indicadores();
+            
+            // Configurar selector de timeframe
+            timeframeSelector = new TimeframeSelector({
+                containerId: 'timeframes',
+                defaultTimeframe: '1m',
+                onTimeframeChange: cambiarTemporalidad
+            });
+            
+            // Configurar callback para actualizaciones
+            binanceAPI.setUpdateCallback(actualizarGrafico);
+            
+            // Cargar datos iniciales
+            cargarDatosIniciales();
+            
+            // Manejar redimensión de ventana
+            window.addEventListener("resize", ajustarTamanoGrafico);
+            
+            // Actualizar precio actual cada segundo
+            setInterval(actualizarPrecioActual, 1000);
+        }
+        
+        // Ajustar tamaño del gráfico
+        function ajustarTamanoGrafico() {
+            const container = document.getElementById('chart-container');
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+            chart.resize(width, height);
+        }
+        
+        // Crear el gráfico principal
+        function crearGrafico() {
+            const container = document.getElementById('chart-container');
+            
+            chart = LightweightCharts.createChart(container, {
+                width: container.clientWidth,
+                height: container.clientHeight,
+                layout: { 
+                    background: { color: "#101010" }, 
+                    textColor: "#C3BCDB" 
+                },
+                grid: { 
+                    vertLines: { color: "#1c1c1c" }, 
+                    horzLines: { color: "#1c1c1c" } 
+                },
+                timeScale: { 
+                    timeVisible: true, 
+                    secondsVisible: false 
+                },
+            });
+
+            // Serie de velas (precio)
+            candlestickSeries = chart.addCandlestickSeries({
+                upColor: 'rgba(38,166,154,1)',
+                downColor: 'rgba(239,83,80,1)',
+                borderVisible: true,
+                wickUpColor: 'rgba(38,166,154,1)',
+                wickDownColor: 'rgba(239,83,80,1)',
+            });
+
+            // Ajustar los márgenes de escala para el gráfico principal
+            chart.applyOptions({
+                priceScale: {
+                    scaleMargins: {
+                        top: 0.1,
+                        bottom: 0.5, // Dejar más espacio para volumen, RSI y MACD
+                    },
+                },
+            });
+
+            // EMA 20
+            ema20Series = chart.addLineSeries({
+                color: '#2196F3',
+                lineWidth: 1,
+                title: '',
+                priceLineVisible: false,
+                crosshairMarkerVisible: false,
+                //lastValueVisible: false ,  
+            });
+
+            // EMA 50
+            ema50Series = chart.addLineSeries({
+                color: '#FF9800',
+                lineWidth: 1,
+                title: '',
+                priceLineVisible: false,
+                crosshairMarkerVisible: false, 
+                lastValueVisible: false ,
+            });
+
+            // Serie de volumen
+            volumeSeries = chart.addHistogramSeries({
+                color: '#26a69a',
+                priceFormat: { type: 'volume' },
+                priceScaleId: 'volume', // Escala separada para volumen
+                priceLineVisible: false,
+                lastValueVisible: false ,  
+            });
+
+            chart.priceScale('volume').applyOptions({
+                scaleMargins: {
+                    top: 0.6, // Comenzar donde termina el gráfico principal
+                    bottom: 0.35, // Dejar espacio para RSI y MACD
+                },
+            });
+
+            // Serie RSI (debajo del volumen)
+            rsiSeries = chart.addLineSeries({
+                color: '#a580ff',
+                lineWidth: 1,
+                priceScaleId: 'rsi', // Escala separada para RSI
+                title: '',
+                crosshairMarkerVisible: false,
+                priceLineVisible: false,
+            });
+
+            // Agregar líneas de referencia para RSI
+            rsiOverSold = chart.addLineSeries({
+                color: '#5e5e5e',
+                lineWidth: 1,
+                priceScaleId: 'rsi',
+                lineStyle: 2, // Línea punteada
+                crosshairMarkerVisible: false,
+                priceLineVisible: false,
+                lastValueVisible: false ,  
+            });
+
+            rsiOverBought = chart.addLineSeries({
+                color: '#5e5e5e',
+                lineWidth: 1,
+                priceScaleId: 'rsi',
+                lineStyle: 2, // Línea punteada
+                crosshairMarkerVisible: false,
+                priceLineVisible: false, 
+                lastValueVisible: false ,  
+            });
+
+            chart.priceScale('rsi').applyOptions({
+                scaleMargins: {
+                    top: 0.7, // Comenzar donde termina el volumen
+                    bottom: 0.2, // Dejar espacio para MACD
+                },
+                visible: true,
+                showLastLabel: true,
+            });
+            
+            // Serie MACD (debajo del RSI)
+            
+            // Línea MACD
+            macdSeries = chart.addLineSeries({
+                color: '#2962FF', // Azul
+                lineWidth: 1,
+                priceScaleId: 'macd', // Escala separada para MACD
+                title: 'MACD',
+                crosshairMarkerVisible: false,
+                priceLineVisible: false,
+                lastValueVisible: false ,  
+            });
+            
+            // Línea de señal
+            macdSignalSeries = chart.addLineSeries({
+                color: '#FF6D00', // Naranja
+                lineWidth: 1,
+                priceScaleId: 'macd',
+                title: 'Signal',
+                crosshairMarkerVisible: false,
+                priceLineVisible: false,
+                lastValueVisible: false ,  
+            });
+            
+            // Histograma MACD
+            macdHistogramSeries = chart.addHistogramSeries({
+                priceScaleId: 'macd',
+                priceLineVisible: false,
+                lastValueVisible: false ,  
+                priceFormat: {
+                    type: 'price',
+                    precision: 1,
+                }
+            });
+            
+            // Línea cero MACD
+            macdZeroLine = chart.addLineSeries({
+                color: '#5e5e5e',
+                lineWidth: 1,
+                priceScaleId: 'macd',
+                lineStyle: 2, // Línea punteada
+                crosshairMarkerVisible: false,
+                priceLineVisible: false,
+                lastValueVisible: false ,  
+            });
+            
+            // Configurar escala MACD
+            chart.priceScale('macd').applyOptions({
+                scaleMargins: {
+                    top: 0.85, // Comenzar donde termina el RSI
+                    bottom: 0.05,
+                },
+                visible: true,
+                showLastLabel: true,
+            });
+            
+            // Ajustar tamaño inicial
+            setTimeout(ajustarTamanoGrafico, 0);
+        }
+        
+        // Cargar datos iniciales
+        async function cargarDatosIniciales() {
+            const data = await binanceAPI.loadHistoricalData();
+            binanceAPI.startLiveUpdates();
+            actualizarGrafico(data);
+        }
+        
+        // Cambiar temporalidad
+        async function cambiarTemporalidad(timeframe) {
+            const data = await binanceAPI.changeTimeframe(timeframe);
+            indicadores.resetCache();
+            actualizarGrafico(data);
+        }
+        
+        // Actualizar gráfico con nuevos datos
+        function actualizarGrafico(data) {
+            if (!data || data.close.length === 0) return;
+            
+            // Calcular todos los indicadores de una sola vez
+            const indicadoresData = indicadores.calcularTodosLosIndicadores(data);
+            
+            // Actualizar series con los datos ya calculados
+            candlestickSeries.setData(indicadoresData.candles);
+            volumeSeries.setData(indicadoresData.volumen);
+            rsiSeries.setData(indicadoresData.rsi);
+            rsiOverBought.setData(indicadoresData.lineasRSI.sobreCompra);
+            rsiOverSold.setData(indicadoresData.lineasRSI.sobreVenta);
+            ema20Series.setData(indicadoresData.ema20);
+            ema50Series.setData(indicadoresData.ema50);
+            macdSeries.setData(indicadoresData.macd);
+            macdSignalSeries.setData(indicadoresData.signal);
+            macdHistogramSeries.setData(indicadoresData.histograma);
+            macdZeroLine.setData(indicadoresData.lineaCeroMACD);
+            
+            // Actualizar precio actual
+            actualizarPrecioActual();
+            
+            // Notificar al manejador de alertas para actualizar
+            if (window.manejadorAlertas) {
+                window.manejadorAlertas.actualizarAlertas(indicadoresData);
+            }
+        }
+        
+        // Actualizar visualización del precio actual
+        function actualizarPrecioActual() {
+            const precio = binanceAPI.getCurrentPrice();
+            const precioElement = document.getElementById('current-price');
+            
+            if (precio) {
+                precioElement.textContent = precio.toFixed(2);
+                
+                // Actualizar color basado en cambio de precio
+                if (precio > lastPrice) {
+                    precioElement.className = 'price-up';
+                } else if (precio < lastPrice) {
+                    precioElement.className = 'price-down';
+                }
+                
+                lastPrice = precio;
+            }
+        }
+        
+        // Iniciar aplicación
+        window.onload = inicializar;
+    </script>
+</body>
+</html>
+
