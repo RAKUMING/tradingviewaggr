@@ -11,7 +11,7 @@ class BinanceAPI {
             close: [],
             volume: []
         };
-        this.currentTimeframe = '15m';
+        this.currentTimeframe = '1m';
         this.priceCurrent = 0;
         this.onUpdateCallback = null;
     }
