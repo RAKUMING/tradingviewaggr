@@ -419,7 +419,7 @@ obtenerDatosMACD(data, periodoRapido = 12, periodoLento = 26, periodoSignal = 9)
         const rsi = this.obtenerDatosRSI(data);
         const lineasRSI = this.obtenerLineasRSI(data);
 
-        const ema20 = this.obtenerDatosEMA(data, 2);
+        const ema20 = this.obtenerDatosEMA(data, 24);
         const ema50 = this.obtenerDatosEMA(data, 50);
 
         const macdData = this.obtenerDatosMACD(data);
