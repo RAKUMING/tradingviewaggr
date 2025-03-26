@@ -44,7 +44,7 @@ class Indicadores {
         
         // Calcular MACD
         const macdData = this.obtenerDatosMACD(data);
-        const lineaCeroMACD = this.obtenerLineaCeroMACD(data);
+        
         
         // Devolver todo en un solo objeto
         return {
