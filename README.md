@@ -22,26 +22,34 @@
 
 ## 🚀 Instalación y Ejecución  
 
-### 1️⃣ Clonar el repositorio  
+### 1 Clonar el repositorio  
 ```bash
 git clone https://github.com/YourUsername/TradingViewPlus.git
-cd TradingViewPlus```
+cd TradingViewPlus
+```
+### 2 instalar dependencias
 
 ```bash
-npm install```
+npm install
+```
 
+###  3 compilar .apk .exe
 
 ```bash
-npm run build vite 15.2```
+npm run build vite 15.2
+```
+
+###  2 acceso bolsa de valores newyork
 
 ```bash
 TV_API_KEY=tu_api_key_aquí
 EXCHANGE_LIST=Binance,Coinbase,Kraken
 DEFAULT_PAIR=BTC/USD
-ALERT_VOLUME=10```
+ALERT_VOLUME=10
+```
 
 
-valor de uso $500 dolares mensuales
+valor de uso $500 dolares mensuales💰
 
 
 
