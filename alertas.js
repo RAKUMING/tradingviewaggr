@@ -1,44 +1,61 @@
+
 class ManejadorAlertas {
     constructor() {
-        this.elementoAlerta = document.getElementById('alerta'); // Elemento para mostrar la señal de trading
-        this.elementoEMA50 = document.getElementById('indicador-alerta'); // Elemento para mostrar EMA50
+        this.elementoAlerta = document.getElementById('alerta');
+        this.elementoValorEMA20 = document.getElementById('indicador-alerta');
+        this.webhookURL = "https://discord.com/api/webhooks/1354463737507217498/fYvupiqtmEjB08aFTFNqhBxWv2FfjOkUAyLuu2uQitFUFHT_9PjQwvl6YD8m0l8U0SLi";
+        this.ultimaSeñal = null; // Para recordar la última señal
     }
 
     actualizarAlertas(indicadoresData) {
-        // Verificar que los datos sean válidos y que haya al menos 2 valores en EMA20
-        if (!indicadoresData.ema20 || indicadoresData.ema20.length < 2 ||
-            !indicadoresData.ema50 || indicadoresData.ema50.length < 1) {
+        if (!indicadoresData.ema20 || indicadoresData.ema20.length < 2) {
             return;
         }
 
-        // Obtener los valores actuales y previos de EMA20
         const ultimoEMA20 = indicadoresData.ema20[indicadoresData.ema20.length - 1].value;
         const prevEMA20 = indicadoresData.ema20[indicadoresData.ema20.length - 2].value;
-        const ultimoEMA50 = indicadoresData.ema50[indicadoresData.ema50.length - 1].value;
 
         let mensaje = '';
         let clase = '';
 
-        // Determinar la pendiente de EMA20
         if (ultimoEMA20 > prevEMA20) {
-            mensaje = 'LONG 🟩'; // Tendencia alcista
+            mensaje = 'LONG 🟩';
             clase = 'long';
         } else if (ultimoEMA20 < prevEMA20) {
-            mensaje = 'SHORT 🟥'; // Tendencia bajista
+            mensaje = 'SHORT 🟥';
             clase = 'short';
-        } else {
-            mensaje = 'NEUTRAL ➖';
-            clase = 'neutral';
         }
 
-        // Actualizar el contenido de la alerta
-        this.elementoAlerta.textContent = `EMA20: ${ultimoEMA20.toFixed(2)} | ${mensaje}`;
-        this.elementoAlerta.className = clase;
+        if (mensaje !== '' && mensaje !== this.ultimaSeñal) {
+            this.elementoAlerta.textContent = mensaje;
+            this.elementoAlerta.className = clase;
+            this.elementoValorEMA20.textContent = `EMA20: ${ultimoEMA20.toFixed(2)}`;
+            this.enviarAlertaDiscord(`📢 **Alerta de Trading**\n🔹 EMA20: ${ultimoEMA20.toFixed(2)}\n📊 **Señal:** ${mensaje}`);
+            this.ultimaSeñal = mensaje;
+        } else if (mensaje === '') {
+            // Si no hay señal, resetear el texto de la alerta
+            this.elementoAlerta.textContent = '';
+            this.elementoAlerta.className = '';
+            this.elementoValorEMA20.textContent = '';
+            this.ultimaSeñal = null;
+        } else {
+            // Si no cambia la señal, actualizar solo el valor de la EMA20
+            this.elementoValorEMA20.textContent = `EMA20: ${ultimoEMA20.toFixed(2)}`;
+        }
+    }
 
-        // Mostrar el valor de la EMA50
-        this.elementoEMA50.textContent = `EMA50: ${ultimoEMA50.toFixed(2)}`;
+    async enviarAlertaDiscord(mensaje) {
+        try {
+            await fetch(this.webhookURL, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ content: mensaje })
+            });
+            console.log("Alerta enviada a Discord con éxito.");
+        } catch (error) {
+            console.error("Error al enviar alerta a Discord:", error);
+        }
     }
 }
 
-// Instancia global para acceder desde otros scripts
 window.manejadorAlertas = new ManejadorAlertas();
