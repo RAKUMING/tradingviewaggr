@@ -15,7 +15,7 @@
         #app-container {
             display: flex;
             flex-direction: column;
-            height: 92vh;
+            height: 95vh;
             width: 100vw;
         }
         
@@ -121,7 +121,7 @@
         <div id="chart-container"></div>
     </div>
 
-    <script src="manejador-alertas2.js"></script>
+    <script src="alertas.js"></script>
     <script>
         // Instancias globales
         let chart;
@@ -164,7 +164,7 @@
             window.addEventListener("resize", ajustarTamanoGrafico);
             
             // Actualizar precio actual cada segundo
-            setInterval(actualizarPrecioActual, 1000);
+            setInterval(actualizarPrecioActual, 10);
         }
         
         // Ajustar tamaño del gráfico
@@ -175,6 +175,10 @@
             chart.resize(width, height);
         }
         
+
+
+
+//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ 
         // Crear el gráfico principal
         function crearGrafico() {
             const container = document.getElementById('chart-container');
@@ -186,7 +190,7 @@
                     background: { color: "#101010" }, 
                     textColor: "#C3BCDB" 
                 },
-                crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
+crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
                 grid: { 
                     vertLines: { color: "#1c1c1c" }, 
                     horzLines: { color: "#1c1c1c" } 
@@ -327,16 +331,7 @@
                 }
             });
             
-            // Línea cero MACD
-            macdZeroLine = chart.addLineSeries({
-                color: '#5e5e5e',
-                lineWidth: 1,
-                priceScaleId: 'macd',
-                lineStyle: 2, // Línea punteada
-                crosshairMarkerVisible: false,
-                priceLineVisible: false,
-                lastValueVisible: false ,  
-            });
+          
             
             // Configurar escala MACD
             chart.priceScale('macd').applyOptions({
@@ -352,6 +347,11 @@
             setTimeout(ajustarTamanoGrafico, 0);
         }
         
+
+
+
+//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
         // Cargar datos iniciales
         async function cargarDatosIniciales() {
             const data = await binanceAPI.loadHistoricalData();
@@ -384,7 +384,6 @@
             macdSeries.setData(indicadoresData.macd);
             macdSignalSeries.setData(indicadoresData.signal);
             macdHistogramSeries.setData(indicadoresData.histograma);
-            macdZeroLine.setData(indicadoresData.lineaCeroMACD);
             
             // Actualizar precio actual
             actualizarPrecioActual();
