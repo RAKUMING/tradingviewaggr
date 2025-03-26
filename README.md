@@ -6,7 +6,7 @@
 
 **TradingView Plus** es una herramienta en tiempo real que permite visualizar la actividad del mercado con gráficos avanzados de **TradingView**. Con soporte para múltiples exchanges, esta aplicación ayuda a detectar movimientos clave y analizar la acción del precio con precisión.  
 
-![Demo](https://media.giphy.com/media/3o7TKtdi0pM4xBkgxq/giphy.gif)  
+![screenshot](https://i.imgur.com/nHJxsdL.gif)
 
 ## ✨ Características  
 
@@ -25,20 +25,20 @@
 ### 1️⃣ Clonar el repositorio  
 ```bash
 git clone https://github.com/YourUsername/TradingViewPlus.git
-cd TradingViewPlus
+cd TradingViewPlus```
 
 ```bash
-npm install
+npm install```
 
 
 ```bash
-npm run build vite 15.2
+npm run build vite 15.2```
 
 ```bash
 TV_API_KEY=tu_api_key_aquí
 EXCHANGE_LIST=Binance,Coinbase,Kraken
 DEFAULT_PAIR=BTC/USD
-ALERT_VOLUME=10
+ALERT_VOLUME=10```
 
 
 valor de uso $500 dolares mensuales
