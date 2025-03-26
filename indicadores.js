@@ -253,34 +253,42 @@ class Indicadores {
     }
     
     // Preparar datos de MACD para gráfico
-    obtenerDatosMACD(data, periodoRapido = 12, periodoLento = 26, periodoSignal = 9) {
-        const { macd, signal, histograma } = this.calcularMACD(data, periodoRapido, periodoLento, periodoSignal);
-        
-        // Convertir línea MACD a formato para gráfico
-        const macdLinea = data.time.map((time, i) => ({
-            time: time,
-            value: macd[i]
-        })).filter(point => point.value !== null);
-        
-        // Convertir línea signal a formato para gráfico
-        const signalLinea = data.time.map((time, i) => ({
-            time: time,
-            value: signal[i]
-        })).filter(point => point.value !== null);
-        
-        // Convertir histograma a formato para gráfico
-        const histogramaData = data.time.map((time, i) => ({
-            time: time,
-            value: histograma[i],
-            color: histograma[i] >= 0 ? 'rgba(38,166,154,0.5)' : 'rgba(239,83,80,0.5)'
-        })).filter(point => point.value !== null);
+    
+// Preparar datos de MACD para gráfico con 4 colores en histograma
+obtenerDatosMACD(data, periodoRapido = 12, periodoLento = 26, periodoSignal = 9) {
+    const { macd, signal, histograma } = this.calcularMACD(data, periodoRapido, periodoLento, periodoSignal);
+
+    const macdLinea = data.time.map((time, i) => ({
+        time: time,
+        value: macd[i]
+    })).filter(point => point.value !== null);
+
+    const signalLinea = data.time.map((time, i) => ({
+        time: time,
+        value: signal[i]
+    })).filter(point => point.value !== null);
+
+    const histogramaData = data.time.map((time, i) => {
+        let color;
+        if (histograma[i] > 0) {
+            color = (histograma[i] > histograma[i - 1]) ? '#80ff98' : '#00820c'; // Verde fuerte y verde claro
+        } else {
+            color = (histograma[i] < histograma[i - 1]) ? '#ff9595' : '#c50800'; // Rojo fuerte y rojo claro
+        }
         
         return {
-            macd: macdLinea,
-            signal: signalLinea,
-            histograma: histogramaData
+            time: time,
+            value: histograma[i],
+            color: color
         };
-    }
+    }).filter(point => point.value !== null);
+
+    return {
+        macd: macdLinea,
+        signal: signalLinea,
+        histograma: histogramaData
+    };
+}
     
     // Obtener datos para líneas de referencia RSI
     obtenerLineasRSI(data) {
@@ -310,14 +318,7 @@ class Indicadores {
             color: data.close[i] > data.open[i] ? 'rgba(38,166,154,0.5)' : 'rgba(239,83,80,0.5)'
         }));
     }
-    
-    // Obtener datos para línea cero del MACD
-    obtenerLineaCeroMACD(data) {
-        return data.time.map(time => ({
-            time: time,
-            value: 0
-        }));
-    }
+
 }
 
 // Exportar la clase
