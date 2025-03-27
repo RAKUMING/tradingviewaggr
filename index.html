@@ -52,6 +52,25 @@
             margin-right: 10px;
         }
         
+           #rsi {
+            background-color: rgba(0,0,0,0.7);
+            color: #fff;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            margin-right: 10px;
+        }
+        
+        #momentum {
+            background-color: rgba(0,0,0,0.7);
+            color: #fff;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            margin-right: 10px;
+        }
+        
+        
         #controls-middle {
             display: flex;
             justify-content: space-between;
@@ -107,7 +126,9 @@
         <div id="controls-top">
             <div id="alertas">
     <div id="alerta">EMA20: Cargando...</div>
-    <div id="indicador-alerta">Indicador: Sin datos</div>
+    <div id="indicador-alerta">cargando...</div>
+    <div id="rsi">Cargando...</div>
+    <div id="momentum">cargando...</div>
     
 </div>
         </div>
@@ -132,6 +153,7 @@
         // Instancias globales
         let chart;
         let candlestickSeries;
+        let closeSeries;
         let volumeSeries;
  
        
@@ -165,7 +187,7 @@
             // Configurar selector de timeframe
             timeframeSelector = new TimeframeSelector({
                 containerId: 'timeframes',
-                defaultTimeframe: '5m',
+                defaultTimeframe: '1m',
                 onTimeframeChange: cambiarTemporalidad
             });
             
@@ -193,7 +215,9 @@
 
 
 
-//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ 
+      
+//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ 
         // Crear el gráfico principal
         function crearGrafico() {
             const container = document.getElementById('chart-container');
@@ -205,7 +229,7 @@
                     background: { color: "#101010" }, 
                     textColor: "#C3BCDB" 
                 },
-crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
+         crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
                 grid: { 
                     vertLines: { color: "#1c1c1c" }, 
                     horzLines: { color: "#1c1c1c" } 
@@ -324,7 +348,7 @@ crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
 
             chart.priceScale('rsi').applyOptions({
                 scaleMargins: {
-                    top: 0.67, // Comenzar donde termina el volumen
+                    top: 0.68, // Comenzar donde termina el volumen
                     bottom: 0.25 ,// Dejar espacio para MACD
                 },
                 visible: true,
@@ -388,7 +412,7 @@ crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
 squeezeSeries = chart.addHistogramSeries({
     priceScaleId: 'squeeze',
     priceLineVisible: false,
-    lastValueVisible: false,
+    //lastValueVisible: false,
     priceFormat: {
         type: 'price',
         precision: 1,
@@ -411,67 +435,69 @@ chart.priceScale('squeeze').applyOptions({
               
               
               
-            
-            
-            
-            // Ajustar tamaño inicial
+           // Ajustar tamaño inicial
             setTimeout(ajustarTamanoGrafico, 0);
         }
         
 
 
 
-//++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  
+//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+// Cargar datos iniciales
+// Cargar datos iniciales
+async function cargarDatosIniciales() {
+    const data = await binanceAPI.loadHistoricalData();
+    binanceAPI.startLiveUpdates();
+    actualizarGrafico(data);
+}
 
-        // Cargar datos iniciales
-        async function cargarDatosIniciales() {
-            const data = await binanceAPI.loadHistoricalData();
-            binanceAPI.startLiveUpdates();
-            actualizarGrafico(data);
-        }
-        
-        // Cambiar temporalidad
-        async function cambiarTemporalidad(timeframe) {
-            const data = await binanceAPI.changeTimeframe(timeframe);
-            indicadores.resetCache();
-            indicadores2.resetCache(); 
-            actualizarGrafico(data);
-        }
-        
-        // Actualizar gráfico con nuevos datos
-        function actualizarGrafico(data) {
-            if (!data || data.close.length === 0) return;
-            
-        
-// Calcular todos los indicadores de una sola vez
-const indicadoresData = indicadores.calcularTodosLosIndicadores(data);
-const indicadores2Data = indicadores2.calcularTodosLosIndicadores2(data);
+// Cambiar temporalidad
+async function cambiarTemporalidad(timeframe) {
+    const data = await binanceAPI.changeTimeframe(timeframe);
+    indicadores.resetCache();
+    indicadores2.resetCache();
+    actualizarGrafico(data);
+}
 
-// Actualizar series con los datos ya calculados
-candlestickSeries.setData(indicadoresData.candles);
-volumeSeries.setData(indicadoresData.volumen);
-rsiSeries.setData(indicadoresData.rsi);
-rsiOverBought.setData(indicadoresData.lineasRSI.sobreCompra);
-rsiOverSold.setData(indicadoresData.lineasRSI.sobreVenta);
-ema20Series.setData(indicadoresData.ema20);
-ema50Series.setData(indicadoresData.ema50);
-macdSeries.setData(indicadoresData.macd);
-macdSignalSeries.setData(indicadoresData.signal);
-macdHistogramSeries.setData(indicadoresData.histograma);
-bbinferiorSeries.setData(indicadoresData.bollinger.bb_inferior);
-bbsuperiorSeries.setData(indicadoresData.bollinger.bb_superior);
+// Actualizar gráfico con nuevos datos
+function actualizarGrafico(data) {
+    if (!data || data.close.length === 0) return;
+
+    // Calcular todos los indicadores de una sola vez
+    const indicadoresData = indicadores.calcularTodosLosIndicadores(data);
+    const indicadores2Data = indicadores2.calcularTodosLosIndicadores2(data);
+
+    // Actualizar series con los datos ya calculados
+    candlestickSeries.setData(indicadoresData.candles);
+    volumeSeries.setData(indicadoresData.volumen);
+    rsiSeries.setData(indicadoresData.rsi);
+    rsiOverBought.setData(indicadoresData.lineasRSI.sobreCompra);
+    rsiOverSold.setData(indicadoresData.lineasRSI.sobreVenta);
+    ema20Series.setData(indicadoresData.ema20);
+    ema50Series.setData(indicadoresData.ema50);
+    macdSeries.setData(indicadoresData.macd);
+    macdSignalSeries.setData(indicadoresData.signal);
+    macdHistogramSeries.setData(indicadoresData.histograma);
+    //bbinferiorSeries.setData(indicadoresData.bollinger.bb_inferior);
+    // bbsuperiorSeries.setData(indicadoresData.bollinger.bb_superior);
+    squeezeSeries.setData(indicadores2Data.squeeze);
+    const ultimoCierre = data.close[data.close.length - 2]; 
+    
+   
+// Imprimir último cierre en el div con id="indicador-alerta"
+ //document.getElementById("indicador-alerta").innerText = `Indicador: ${ultimoCierre}`;
+
+    // Actualizar precio actual
+    actualizarPrecioActual();
+    
+    // Notificar al manejador de alertas para actualizar
+    if (window.manejadorAlertas) {
+        window.manejadorAlertas.actualizarAlertas(indicadoresData, indicadores2Data,ultimoCierre);
+    }
+}
 
 
-squeezeSeries.setData(indicadores2Data.squeeze);
-            
-            // Actualizar precio actual
-            actualizarPrecioActual();
-            
-            // Notificar al manejador de alertas para actualizar
-            if (window.manejadorAlertas) {
-                window.manejadorAlertas.actualizarAlertas(indicadoresData);
-            }
-        }
         
         // Actualizar visualización del precio actual
         function actualizarPrecioActual() {
@@ -497,3 +523,4 @@ squeezeSeries.setData(indicadores2Data.squeeze);
     </script>
 </body>
 </html>
+
