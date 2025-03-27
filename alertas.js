@@ -72,16 +72,16 @@ class ManejadorAlertas {
 
         // Determinar la tendencia de la EMA20
         if (ultimoEMA20 > prevEMA20) {
-            this.elementoAlerta.textContent = 'Alcista 📈';
+            this.elementoAlerta.textContent = 'Alcista ⬆️';
         } else if (ultimoEMA20 < prevEMA20) {
-            this.elementoAlerta.textContent = 'Bajista 📉';
+            this.elementoAlerta.textContent = 'Bajista ⬇️';
         } else {
             this.elementoAlerta.textContent = '';
         }
 
         // Mostrar el valor del RSI en el elemento HTML
         this.elementoEMA20.textContent = close.toFixed(2);
-        this.elementoRsi.textContent = precioCurrent.toFixed(2);
+        this.elementoRsi.textContent = ultimoRSI.toFixed(2);
         this.elementoMomentum.textContent = ultimoSqueeze.toFixed(2);
 
         // Verificar condiciones para enviar alerta
