@@ -9,7 +9,7 @@ class Indicadores {
             macdHistograma: null,
             atr: null,
             bollinger: null,
-            squeezeMomentum: null
+           
         };
     }
 
@@ -215,24 +215,30 @@ class Indicadores {
         const bandaSuperior = [];
         const bandaInferior = [];
 
+        // Precalcular nulls para mantener alineación de índices
+        const nulls = Array(periodo - 1).fill(null);
+
+        // Calcular media móvil simple (SMA)
         for (let i = periodo - 1; i < data.close.length; i++) {
             const segmento = data.close.slice(i - (periodo - 1), i + 1);
             const media = segmento.reduce((a, b) => a + b) / periodo;
             mediaMovil.push(media);
         }
 
+        // Calcular desviación estándar y bandas
         for (let i = 0; i < mediaMovil.length; i++) {
             const segmento = data.close.slice(i, i + periodo);
+            
+            // Calcular varianza
             const varianza = segmento.reduce((acc, val) => {
                 return acc + Math.pow(val - mediaMovil[i], 2);
             }, 0) / periodo;
+            
             const desviacionEstandar = Math.sqrt(varianza);
 
             bandaSuperior.push(mediaMovil[i] + (desviacionEstandar * desviaciones));
             bandaInferior.push(mediaMovil[i] - (desviacionEstandar * desviaciones));
         }
-
-        const nulls = Array(periodo - 1).fill(null);
 
         this.cache.bollinger = {
             banda_media: [...nulls, ...mediaMovil],
@@ -243,37 +249,7 @@ class Indicadores {
         return this.cache.bollinger;
     }
 
-    // Calcular Squeeze Momentum Indicator
-    calcularSqueezeMomentum(data, bbPeriodo = 20, bbMultiplicador = 2, keltnerPeriodo = 20, atrMultiplicador = 1.5) {
-        if (this.cache.squeezeMomentum && this.cache.squeezeMomentum.length === data.close.length) {
-            return this.cache.squeezeMomentum;
-        }
 
-        const bollinger = this.calcularBollinger(data, bbPeriodo, bbMultiplicador);
-        const atr = this.calcularATR(data, keltnerPeriodo);
-        const ema = this.calcularEMA(data, 20);
-
-        const squeezeMomentum = data.close.map((close, i) => {
-            if (i < bbPeriodo || !ema[i]) return null;
-
-            const bbWidth = (bollinger.bb_superior[i] - bollinger.bb_inferior[i]) / bollinger.banda_media[i];
-            const keltnerWidth = atr[i] * atrMultiplicador;
-
-            const momentum = ema[i] - ema[i - 1];
-
-            let estado = 'normal';
-            if (bbWidth < keltnerWidth) estado = 'apretado';
-            if (bbWidth > keltnerWidth) estado = 'expandido';
-
-            return {
-                momentum: momentum,
-                estado: estado
-            };
-        });
-
-        this.cache.squeezeMomentum = squeezeMomentum;
-        return squeezeMomentum;
-    }
 
     // Preparar datos de RSI para gráfico
     obtenerDatosRSI(data) {
@@ -295,55 +271,54 @@ class Indicadores {
         })).filter(point => point.value !== null);
     }
 
-    // Preparar datos de MACD para gráfico
-    
-// Preparar datos de MACD para gráfico con 4 colores en histograma
-obtenerDatosMACD(data, periodoRapido = 12, periodoLento = 26, periodoSignal = 9) {
-    const { macd, signal, histograma } = this.calcularMACD(data, periodoRapido, periodoLento, periodoSignal);
+    // Preparar datos de MACD para gráfico con 4 colores en histograma
+    obtenerDatosMACD(data, periodoRapido = 12, periodoLento = 26, periodoSignal = 9) {
+        const { macd, signal, histograma } = this.calcularMACD(data, periodoRapido, periodoLento, periodoSignal);
 
-    const macdLinea = data.time.map((time, i) => ({
-        time: time,
-        value: macd[i]
-    })).filter(point => point.value !== null);
-
-    const signalLinea = data.time.map((time, i) => ({
-        time: time,
-        value: signal[i]
-    })).filter(point => point.value !== null);
-
-    const histogramaData = data.time.map((time, i) => {
-        let color;
-        if (histograma[i] > 0) {
-            color = (histograma[i] > histograma[i - 1]) ? '#80ff98' : '#00820c'; // Verde fuerte y verde claro
-        } else {
-            color = (histograma[i] < histograma[i - 1]) ? '#ff9595' : '#c50800'; // Rojo fuerte y rojo claro
-        }
-        
-        return {
+        const macdLinea = data.time.map((time, i) => ({
             time: time,
-            value: histograma[i],
-            color: color
-        };
-    }).filter(point => point.value !== null);
+            value: macd[i]
+        })).filter(point => point.value !== null);
 
-    return {
-        macd: macdLinea,
-        signal: signalLinea,
-        histograma: histogramaData
-    };
-}
+        const signalLinea = data.time.map((time, i) => ({
+            time: time,
+            value: signal[i]
+        })).filter(point => point.value !== null);
+
+        const histogramaData = data.time.map((time, i) => {
+            let color;
+            if (histograma[i] > 0) {
+                color = (histograma[i] > histograma[i - 1]) ? '#80ff98' : '#00820c'; // Verde fuerte y verde claro
+            } else {
+                color = (histograma[i] < histograma[i - 1]) ? '#ff9595' : '#c50800'; // Rojo fuerte y rojo claro
+            }
+            
+            return {
+                time: time,
+                value: histograma[i],
+                color: color
+            };
+        }).filter(point => point.value !== null);
+
+        return {
+            macd: macdLinea,
+            signal: signalLinea,
+            histograma: histogramaData
+        };
+    }
+
     // Obtener datos para líneas de referencia RSI
     obtenerLineasRSI(data) {
         const tiempos = data.time;
 
         const sobreCompra = tiempos.map(time => ({
             time: time,
-            value: 30
+            value: 70
         }));
 
         const sobreVenta = tiempos.map(time => ({
             time: time,
-            value: 70
+            value: 30
         }));
 
         return {
@@ -361,7 +336,6 @@ obtenerDatosMACD(data, periodoRapido = 12, periodoLento = 26, periodoSignal = 9)
         }));
     }
 
-    
     // Obtener datos para gráfico de ATR
     obtenerDatosATR(data, periodo = 14) {
         const atr = this.calcularATR(data, periodo);
@@ -392,18 +366,25 @@ obtenerDatosMACD(data, periodoRapido = 12, periodoLento = 26, periodoSignal = 9)
         };
     }
 
-    // Obtener datos para gráfico de Squeeze Momentum
-    obtenerDatosSqueezeMomentum(data) {
-        const squeeze = this.calcularSqueezeMomentum(data);
 
-        return data.time.map((time, i) => ({
+//Obtener datos para las bandas dw bollinger 
+   obtenerDatosBollinger(data, periodo = 20, desviaciones = 2) {
+    const bollinger = this.calcularBollinger(data, periodo, desviaciones);
+
+    return {
+        bb_inferior: data.time.map((time, i) => ({
             time: time,
-            momentum: squeeze[i]?.momentum || null,
-            estado: squeeze[i]?.estado || null,
-            color: squeeze[i]?.momentum >= 0 ? 'rgba(38,166,154,0.5)' : 'rgba(239,83,80,0.5)'
-        })).filter(point => point.momentum !== null);
-    }
+            value: bollinger.bb_inferior[i]
+        })).filter(point => point.value !== null),
+        bb_superior: data.time.map((time, i) => ({
+            time: time,
+            value: bollinger.bb_superior[i]
+        })).filter(point => point.value !== null)
+    };
+}
 
+
+   
     // Calcular todos los indicadores
     calcularTodosLosIndicadores(data) {
         const candles = data.time.map((time, i) => ({
@@ -415,19 +396,14 @@ obtenerDatosMACD(data, periodoRapido = 12, periodoLento = 26, periodoSignal = 9)
         }));
 
         const volumen = this.colorearVolumen(data);
-
         const rsi = this.obtenerDatosRSI(data);
         const lineasRSI = this.obtenerLineasRSI(data);
-
-        const ema20 = this.obtenerDatosEMA(data, 24);
+        const ema20 = this.obtenerDatosEMA(data, 30);
         const ema50 = this.obtenerDatosEMA(data, 50);
-
         const macdData = this.obtenerDatosMACD(data);
-        
-
         const atr = this.obtenerDatosATR(data);
         const bollinger = this.obtenerDatosBollinger(data);
-        const squeezeMomentum = this.obtenerDatosSqueezeMomentum(data);
+       
 
         return {
             candles,
@@ -441,11 +417,10 @@ obtenerDatosMACD(data, periodoRapido = 12, periodoLento = 26, periodoSignal = 9)
             histograma: macdData.histograma,
             atr,
             bollinger,
-            squeezeMomentum
+         
         };
     }
 }
 
 // Exportar la clase
 window.Indicadores = Indicadores;
-
