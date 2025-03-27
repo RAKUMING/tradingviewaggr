@@ -1,4 +1,3 @@
-
 class Indicadores2 {
     constructor() {
         this.cache = {
@@ -70,15 +69,12 @@ class Indicadores2 {
         }
 
         const source = data.close;
-        const highestHigh = source.map((_, i) => this.highest(data.high.slice(0, i + 1), 5));
-        const lowestLow = source.map((_, i) => this.lowest(data.low.slice(0, i + 1), 5));
+        const highestHigh = source.map((_, i) => this.highest(data.high.slice(0, i + 1), 10));
+        const lowestLow = source.map((_, i) => this.lowest(data.low.slice(0, i + 1), 10));
         const smaClose = source.map((_, i) => this.sma(source.slice(0, i + 1), opts.length));
 
         const midpoint = source.map((_, i) =>
-            this.avg([
-                this.avg([highestHigh[i], lowestLow[i]]),
-                smaClose[i]
-            ])
+            this.avg([this.avg([highestHigh[i], lowestLow[i]]), smaClose[i]])
         );
 
         let squeeze = new Array(source.length).fill(null);
@@ -128,10 +124,21 @@ class Indicadores2 {
         }).filter(point => point !== null);
     }
 
-    // Calcular todos los indicadores
+    // Calcular todos los indicadores, incluyendo los valores de cierre
     calcularTodosLosIndicadores2(data) {
-        const squeeze = this.obtenerDatosSqueezeMomentum(data);
-        return { squeeze };
+        // Verifica si el array 'close' está presente antes de intentar calcular el indicador
+        if (!data.close || data.close.length === 0) {
+            console.error('Datos de cierre (close) no disponibles.');
+            return null;
+        }
+
+        const squeezeData = this.obtenerDatosSqueezeMomentum(data);
+        
+
+        return {
+            squeeze: squeezeData,
+     
+        };
     }
 }
 
