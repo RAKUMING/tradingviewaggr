@@ -1,12 +1,15 @@
+
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gráfico BTC/USDT con Múltiples Temporalidades</title>
+    <title>TradingViewAggr</title>
     <script src="https://unpkg.com/lightweight-charts@3.8.0/dist/lightweight-charts.standalone.production.js"></script>
     <script src="binanceapi.js"></script>
     <script src="indicadores.js"></script>
+    <script src="indicadores2.js"></script>
     <script src="selectortimeframe.js"></script>
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
@@ -15,7 +18,7 @@
         #app-container {
             display: flex;
             flex-direction: column;
-            height: 98%;
+            height: 90vh;
             width: 100vw;
         }
         
@@ -103,9 +106,10 @@
     <div id="app-container">
         <div id="controls-top">
             <div id="alertas">
-                <div id="alerta">EMA20: Cargando...</div>
-                <div id="indicador-alerta">Indicador: Sin datos</div>
-            </div>
+    <div id="alerta">EMA20: Cargando...</div>
+    <div id="indicador-alerta">Indicador: Sin datos</div>
+    
+</div>
         </div>
         <div id="controls-middle">
             <div id="timeframes">
@@ -123,21 +127,31 @@
 
     <script src="alertas.js"></script>
     <script>
+        
+        
         // Instancias globales
         let chart;
         let candlestickSeries;
         let volumeSeries;
-        let rsiSeries;
-        let rsiOverSold;
-        let rsiOverBought;
+ 
+       
         let ema20Series;
         let ema50Series;
+        let bbsuperiorSeries;
+        let bbinferiorSeries;
+        
         let macdSeries;
         let macdSignalSeries;
         let macdHistogramSeries;
         let macdZeroLine;
+        let rsiSeries;
+        let rsiOverSold;
+        let rsiOverBought;
+        let squeezeSeries;
+        
         let binanceAPI;
         let indicadores;
+        let indicadores2;
         let timeframeSelector;
         let lastPrice = 0;
         
@@ -146,11 +160,12 @@
             crearGrafico();
             binanceAPI = new BinanceAPI();
             indicadores = new Indicadores();
+            indicadores2 = new Indicadores2();
             
             // Configurar selector de timeframe
             timeframeSelector = new TimeframeSelector({
                 containerId: 'timeframes',
-                defaultTimeframe: '1m',
+                defaultTimeframe: '5m',
                 onTimeframeChange: cambiarTemporalidad
             });
             
@@ -178,7 +193,7 @@
 
 
 
-//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ 
+//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++
         // Crear el gráfico principal
         function crearGrafico() {
             const container = document.getElementById('chart-container');
@@ -214,8 +229,8 @@ crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
             chart.applyOptions({
                 priceScale: {
                     scaleMargins: {
-                        top: 0.1,
-                        bottom: 0.5, // Dejar más espacio para volumen, RSI y MACD
+                        top: 0.01,
+                        bottom: 0.40, // Dejar más espacio para volumen
                     },
                 },
             });
@@ -239,6 +254,26 @@ crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
                 crosshairMarkerVisible: false, 
                 lastValueVisible: false ,
             });
+            
+            // BB_INFERIOR 
+            bbinferiorSeries = chart.addLineSeries({
+                color: '#4a4a4a',
+                lineWidth: 1,
+                title: '',
+                priceLineVisible: false,
+                crosshairMarkerVisible: false,
+                lastValueVisible: false ,  
+            });
+
+            // BB_SUPERIOR 
+            bbsuperiorSeries = chart.addLineSeries({
+                color: '#4a4a4a',
+                lineWidth: 1,
+                title: '',
+                priceLineVisible: false,
+                crosshairMarkerVisible: false, 
+                lastValueVisible: false ,
+            });
 
             // Serie de volumen
             volumeSeries = chart.addHistogramSeries({
@@ -251,12 +286,12 @@ crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
 
             chart.priceScale('volume').applyOptions({
                 scaleMargins: {
-                    top: 0.6, // Comenzar donde termina el gráfico principal
+                    top: 0.60, // Comenzar donde termina el gráfico principal
                     bottom: 0.35, // Dejar espacio para RSI y MACD
                 },
             });
 
-            // Serie RSI (debajo del volumen)
+            // Serie RSI 
             rsiSeries = chart.addLineSeries({
                 color: '#a580ff',
                 lineWidth: 1,
@@ -289,8 +324,8 @@ crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
 
             chart.priceScale('rsi').applyOptions({
                 scaleMargins: {
-                    top: 0.7, // Comenzar donde termina el volumen
-                    bottom: 0.2, // Dejar espacio para MACD
+                    top: 0.67, // Comenzar donde termina el volumen
+                    bottom: 0.25 ,// Dejar espacio para MACD
                 },
                 visible: true,
                 showLastLabel: true,
@@ -336,12 +371,48 @@ crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
             // Configurar escala MACD
             chart.priceScale('macd').applyOptions({
                 scaleMargins: {
-                    top: 0.85, // Comenzar donde termina el RSI
-                    bottom: 0.05,
+                    top: 0.75, // Comenzar donde termina el RSI
+                    bottom: 0.10,
                 },
                 visible: true,
                 showLastLabel: true,
             });
+            
+ // Histograma Squeeze con 4 colores dinámicos
+ 
+ 
+ 
+ 
+ 
+ // Histograma Squeeze con 4 colores
+squeezeSeries = chart.addHistogramSeries({
+    priceScaleId: 'squeeze',
+    priceLineVisible: false,
+    lastValueVisible: false,
+    priceFormat: {
+        type: 'price',
+        precision: 1,
+    },
+    
+});
+
+
+
+// Configurar escala squeeze
+chart.priceScale('squeeze').applyOptions({
+    scaleMargins: {
+        top: 0.90, // Comenzar donde termina el RSI
+        bottom: 0.01,
+    },
+    visible: true,
+    showLastLabel: true,
+});
+ 
+              
+              
+              
+            
+            
             
             // Ajustar tamaño inicial
             setTimeout(ajustarTamanoGrafico, 0);
@@ -350,7 +421,7 @@ crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
 
 
 
-//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+//++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
         // Cargar datos iniciales
         async function cargarDatosIniciales() {
@@ -363,6 +434,7 @@ crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
         async function cambiarTemporalidad(timeframe) {
             const data = await binanceAPI.changeTimeframe(timeframe);
             indicadores.resetCache();
+            indicadores2.resetCache(); 
             actualizarGrafico(data);
         }
         
@@ -370,20 +442,27 @@ crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
         function actualizarGrafico(data) {
             if (!data || data.close.length === 0) return;
             
-            // Calcular todos los indicadores de una sola vez
-            const indicadoresData = indicadores.calcularTodosLosIndicadores(data);
-            
-            // Actualizar series con los datos ya calculados
-            candlestickSeries.setData(indicadoresData.candles);
-            volumeSeries.setData(indicadoresData.volumen);
-            rsiSeries.setData(indicadoresData.rsi);
-            rsiOverBought.setData(indicadoresData.lineasRSI.sobreCompra);
-            rsiOverSold.setData(indicadoresData.lineasRSI.sobreVenta);
-            ema20Series.setData(indicadoresData.ema20);
-            ema50Series.setData(indicadoresData.ema50);
-            macdSeries.setData(indicadoresData.macd);
-            macdSignalSeries.setData(indicadoresData.signal);
-            macdHistogramSeries.setData(indicadoresData.histograma);
+        
+// Calcular todos los indicadores de una sola vez
+const indicadoresData = indicadores.calcularTodosLosIndicadores(data);
+const indicadores2Data = indicadores2.calcularTodosLosIndicadores2(data);
+
+// Actualizar series con los datos ya calculados
+candlestickSeries.setData(indicadoresData.candles);
+volumeSeries.setData(indicadoresData.volumen);
+rsiSeries.setData(indicadoresData.rsi);
+rsiOverBought.setData(indicadoresData.lineasRSI.sobreCompra);
+rsiOverSold.setData(indicadoresData.lineasRSI.sobreVenta);
+ema20Series.setData(indicadoresData.ema20);
+ema50Series.setData(indicadoresData.ema50);
+macdSeries.setData(indicadoresData.macd);
+macdSignalSeries.setData(indicadoresData.signal);
+macdHistogramSeries.setData(indicadoresData.histograma);
+bbinferiorSeries.setData(indicadoresData.bollinger.bb_inferior);
+bbsuperiorSeries.setData(indicadoresData.bollinger.bb_superior);
+
+
+squeezeSeries.setData(indicadores2Data.squeeze);
             
             // Actualizar precio actual
             actualizarPrecioActual();
@@ -418,4 +497,3 @@ crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
     </script>
 </body>
 </html>
-
