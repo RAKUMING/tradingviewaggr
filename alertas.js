@@ -9,26 +9,64 @@ class ManejadorAlertas {
         // Webhook URL for Discord
         this.webhookURL = "https://discord.com/api/webhooks/1354463737507217498/fYvupiqtmEjB08aFTFNqhBxWv2FfjOkUAyLuu2uQitFUFHT_9PjQwvl6YD8m0l8U0SLi";
         
-        // Variable para rastrear el último cierre que disparó la alerta
-        this.ultimoCierreAlerta = null;
+        // Variables para el contador de tiempo
+        this.tiempoInicio = null;
+        this.contadorInterval = null;
+        this.tiempoTranscurrido = 0;
+        
+        // Iniciar el contador de tiempo inmediatamente
+        this.iniciarContador();
     }
-
-    async enviarAlertaWebhook(datosIndicadores) {
+    
+    iniciarContador() {
+        // Guardar tiempo de inicio
+        this.tiempoInicio = new Date();
+        
+        // Actualizar el tiempo transcurrido cada segundo para mostrarlo en la interfaz
+        setInterval(() => {
+            const ahora = new Date();
+            this.tiempoTranscurrido = Math.floor((ahora - this.tiempoInicio) / 1000);
+            // Actualizar el elemento con el tiempo transcurrido
+            this.elementoMomentum.textContent = this.formatearTiempo(this.tiempoTranscurrido);
+        }, 1000); // Actualizar cada segundo
+        
+        // Configurar intervalo para enviar alertas cada 30 segundos
+        this.contadorInterval = setInterval(() => {
+            // Enviar alerta periódica
+            this.enviarAlertaPeriodica();
+        }, 30000); // 30 segundos
+        
+        // Agregar evento para limpiar el intervalo cuando se cierre la página
+        window.addEventListener('beforeunload', () => {
+            if (this.contadorInterval) {
+                clearInterval(this.contadorInterval);
+            }
+        });
+    }
+    
+    formatearTiempo(segundos) {
+        const horas = Math.floor(segundos / 3600);
+        const minutos = Math.floor((segundos % 3600) / 60);
+        const segs = segundos % 60;
+        
+        return `${horas}:${minutos.toString().padStart(2, '0')}:${segs.toString().padStart(2, '0')}`;
+    }
+    
+    async enviarAlertaPeriodica() {
         try {
-            // Preparar el mensaje con todos los indicadores
+            // Obtener valores actuales
+            const precioActual = binanceAPI.getCurrentPrice();
+            const ema20 = parseFloat(this.elementoEMA20.textContent) || 0;
+            const rsi = parseFloat(this.elementoRsi.textContent) || 0;
+            
+            // Preparar el mensaje con el formato especificado
             const mensaje = {
-                content: "🚨 Nueva Alerta de  🚨",
-                embeds: [{
-                    title: "Detalles de los Indicadores",
-                    description: "Condiciones de alerta cumplidas",
-                    color: 5814783, // Color naranja
-                    fields: [
-                        { name: "Close", value: datosIndicadores.close.toFixed(2), inline: true },
-                        { name: "EMA 20", value: datosIndicadores.ema20.toFixed(2), inline: true },
-                        { name: "EMA 50", value: datosIndicadores.ema50.toFixed(2), inline: true },
-                        { name: "Precio Actual", value: datosIndicadores.precioActual.toFixed(2), inline: true }
-                    ]
-                }]
+                content: "⚠️NUEVA ALERTA⚠️\n\n" +
+                         `TIEMPO:  ${this.formatearTiempo(this.tiempoTranscurrido)}\n` +
+                         `PRECIO ACTUAL: ${precioActual.toFixed(2)}\n` +
+                         `EMA20: ${ema20.toFixed(2)}\n` +
+                         `RSI: ${rsi.toFixed(2)}\n\n\n` +
+                          `________________________________`
             };
 
             // Enviar la solicitud al webhook
@@ -41,10 +79,10 @@ class ManejadorAlertas {
             });
 
             if (!respuesta.ok) {
-                console.error('Error al enviar el webhook:', respuesta.statusText);
+                console.error('Error al enviar la alerta periódica:', respuesta.statusText);
             }
         } catch (error) {
-            console.error('Error en enviarAlertaWebhook:', error);
+            console.error('Error en enviarAlertaPeriodica:', error);
         }
     }
 
@@ -78,30 +116,7 @@ class ManejadorAlertas {
         // Mostrar el valor del RSI en el elemento HTML
         this.elementoEMA20.textContent = close.toFixed(2);
         this.elementoRsi.textContent = ultimoRSI.toFixed(2);
-        this.elementoMomentum.textContent = ultimoSqueeze.toFixed(2);
-
-        // Verificar condiciones para enviar alerta
-        const condicionesAlerta = (
-            close > ultimoEMA20 
-            
-        );
-
-        // Enviar alerta solo si se cumplen las condiciones y el cierre es diferente al último que disparó una alerta
-        if (condicionesAlerta && this.ultimoCierreAlerta !== close) {
-            // Preparar datos para el webhook
-            const datosParaWebhook = {
-                close: close,
-                ema20: ultimoEMA20,
-                ema50: ultimoEMA50,
-                precioActual: precioCurrent
-            };
-
-            // Enviar alerta al webhook
-            this.enviarAlertaWebhook(datosParaWebhook);
-
-            // Actualizar el último cierre que disparó la alerta
-            this.ultimoCierreAlerta = close;
-        }
+        // No actualizamos elementoMomentum aquí porque ahora muestra el tiempo transcurrido
     }
 }
 
