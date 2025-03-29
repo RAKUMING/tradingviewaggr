@@ -17,7 +17,7 @@ class ManejadorAlertas {
         try {
             // Preparar el mensaje con todos los indicadores
             const mensaje = {
-                content: "🚨 Nueva Alerta de Trading 🚨",
+                content: "🚨 Nueva Alerta de  🚨",
                 embeds: [{
                     title: "Detalles de los Indicadores",
                     description: "Condiciones de alerta cumplidas",
@@ -26,10 +26,6 @@ class ManejadorAlertas {
                         { name: "Close", value: datosIndicadores.close.toFixed(2), inline: true },
                         { name: "EMA 20", value: datosIndicadores.ema20.toFixed(2), inline: true },
                         { name: "EMA 50", value: datosIndicadores.ema50.toFixed(2), inline: true },
-                        { name: "RSI", value: datosIndicadores.rsi.toFixed(2), inline: true },
-                        { name: "MACD", value: datosIndicadores.macd.toFixed(2), inline: true },
-                        { name: "MACD Signal", value: datosIndicadores.signal.toFixed(2), inline: true },
-                        { name: "Momentum (Squeeze)", value: datosIndicadores.momentum.toFixed(2), inline: true },
                         { name: "Precio Actual", value: datosIndicadores.precioActual.toFixed(2), inline: true }
                     ]
                 }]
@@ -97,10 +93,6 @@ class ManejadorAlertas {
                 close: close,
                 ema20: ultimoEMA20,
                 ema50: ultimoEMA50,
-                rsi: ultimoRSI,
-                macd: ultimoMACD,
-                signal: ultimoMACDSignal,
-                momentum: ultimoSqueeze,
                 precioActual: precioCurrent
             };
 
