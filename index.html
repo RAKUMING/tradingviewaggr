@@ -436,6 +436,18 @@ function configurarSelectorIndicadores() {
             
             // Serie MACD (debajo del RSI)
             
+          // Histograma MACD
+            macdHistogramSeries = chart.addHistogramSeries({
+                priceScaleId: 'macd',
+                priceLineVisible: false,
+                lastValueVisible: false ,  
+                priceFormat: {
+                    type: 'price',
+                    precision: 1,
+                }
+            });
+            
+          
             // Línea MACD
             macdSeries = chart.addLineSeries({
                 color: '#2962FF', // Azul
@@ -458,18 +470,7 @@ function configurarSelectorIndicadores() {
                 lastValueVisible: false ,  
             });
             
-            // Histograma MACD
-            macdHistogramSeries = chart.addHistogramSeries({
-                priceScaleId: 'macd',
-                priceLineVisible: false,
-                lastValueVisible: false ,  
-                priceFormat: {
-                    type: 'price',
-                    precision: 1,
-                }
-            });
-            
-          
+
             
             // Configurar escala MACD
             chart.priceScale('macd').applyOptions({
