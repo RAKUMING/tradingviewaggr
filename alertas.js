@@ -86,11 +86,8 @@ class ManejadorAlertas {
 
         // Verificar condiciones para enviar alerta
         const condicionesAlerta = (
-            close > ultimoEMA20 && 
-            close > ultimoEMA50 && 
-            ultimoRSI > 50 && 
-            ultimoMACD > 0 && 
-            ultimoSqueeze > 0
+            close > ultimoEMA20 
+            
         );
 
         // Enviar alerta solo si se cumplen las condiciones y el cierre es diferente al último que disparó una alerta
