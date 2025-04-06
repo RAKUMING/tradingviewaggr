@@ -1,10 +1,12 @@
+
+
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TradingViewAggr</title>
-    <link rel="icon" type="image/jpeg" href="cpu.png"> <!-- Aquí agregas el ícono -->
     <script src="https://unpkg.com/lightweight-charts@3.8.0/dist/lightweight-charts.standalone.production.js"></script>
     <script src="binanceapi.js"></script>
     <script src="indicadores.js"></script>
@@ -17,7 +19,7 @@
         #app-container {
             display: flex;
             flex-direction: column;
-            height: 90vh;
+            height: 93vh;
             width: 100vw;
         }
         
@@ -197,6 +199,9 @@
         let rsiOverSold;
         let rsiOverBought;
         let squeezeSeries;
+        let liquidacioneslongSeries;
+        let liquidacionesshortSeries;
+
         
         let binanceAPI;
         let indicadores;
@@ -283,244 +288,247 @@ function configurarSelectorIndicadores() {
  
       
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ 
-        // Crear el gráfico principal
-        function crearGrafico() {
-            const container = document.getElementById('chart-container');
-            
-            chart = LightweightCharts.createChart(container, {
-                width: container.clientWidth,
-                height: container.clientHeight,
-                layout: { 
-                    background: { color: "#101010" }, 
-                    textColor: "#C3BCDB" 
-                },
-         crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
-                grid: { 
-                    vertLines: { color: "#1c1c1c" }, 
-                    horzLines: { color: "#1c1c1c" } 
-                },
-                timeScale: { 
-                    timeVisible: true, 
-                    secondsVisible: false,
-                    rightOffset: 5 // Margen de 5 velas 
-                },
-            });
-
-            // Serie de velas (precio)
-            candlestickSeries = chart.addCandlestickSeries({
-                upColor: 'rgba(38,166,154,1)',
-                downColor: 'rgba(239,83,80,1)',
-                borderVisible: true,
-                wickUpColor: 'rgba(38,166,154,1)',
-                wickDownColor: 'rgba(239,83,80,1)',
-            });
-
-            // Ajustar los márgenes de escala para el gráfico principal
-            chart.applyOptions({
-                priceScale: {
-                    scaleMargins: {
-                        top: 0.01,
-                        bottom: 0.40, // Dejar más espacio para volumen
-                    },
-                },
-            });
-
-            // EMA 20
-            ema20Series = chart.addLineSeries({
-                color: '#2196F3',
-                lineWidth: 1,
-                title: '',
-                priceLineVisible: false,
-                crosshairMarkerVisible: false,
-                lastValueVisible: false ,  
-            });
-
-            // EMA 50
-            ema50Series = chart.addLineSeries({
-                color: '#3dc200',
-                lineWidth: 1,
-                title: '',
-                priceLineVisible: false,
-                crosshairMarkerVisible: false, 
-                lastValueVisible: false ,
-            });
-            
-            // BB_INFERIOR 
-            bbinferiorSeries = chart.addLineSeries({
-                color: '#486ed8',
-                lineWidth: 1,
-                title: '',
-                priceLineVisible: false,
-                crosshairMarkerVisible: false,
-                lastValueVisible: false ,  
-            });
-
-            // BB_SUPERIOR 
-            bbsuperiorSeries = chart.addLineSeries({
-                color: '#486ed8',
-                lineWidth: 1,
-                title: '',
-                priceLineVisible: false,
-                crosshairMarkerVisible: false, 
-                lastValueVisible: false ,
-            });
-
-       
-            // SUPERTREND
-                supertrendSeries = chart.addLineSeries({
-                color: 'white',
-                lineWidth: 1,
-                title: '',
-                priceLineVisible: false,
-                crosshairMarkerVisible: false, 
-                lastValueVisible: false ,
-            });
-
-
- 
-            // Serie de volumen
-            volumeSeries = chart.addHistogramSeries({
-                color: '#26a69a',
-                priceFormat: { type: 'volume' },
-                priceScaleId: 'volume', // Escala separada para volumen
-                priceLineVisible: false,
-                lastValueVisible: false ,  
-            });
-
-            chart.priceScale('volume').applyOptions({
-                scaleMargins: {
-                    top: 0.60, // Comenzar donde termina el gráfico principal
-                    bottom: 0.35, // Dejar espacio para RSI y MACD
-                },
-            });
-
-            // Serie RSI 
-            rsiSeries = chart.addLineSeries({
-                color: '#a580ff',
-                lineWidth: 1,
-                priceScaleId: 'rsi', // Escala separada para RSI
-                title: '',
-                crosshairMarkerVisible: false,
-                priceLineVisible: false,
-            });
-
-            // Agregar líneas de referencia para RSI
-            rsiOverSold = chart.addLineSeries({
-                color: '#5e5e5e',
-                lineWidth: 1,
-                priceScaleId: 'rsi',
-                lineStyle: 2, // Línea punteada
-                crosshairMarkerVisible: false,
-                priceLineVisible: false,
-                lastValueVisible: false ,  
-            });
-
-            rsiOverBought = chart.addLineSeries({
-                color: '#5e5e5e',
-                lineWidth: 1,
-                priceScaleId: 'rsi',
-                lineStyle: 2, // Línea punteada
-                crosshairMarkerVisible: false,
-                priceLineVisible: false, 
-                lastValueVisible: false ,  
-            });
-
-            chart.priceScale('rsi').applyOptions({
-                scaleMargins: {
-                    top: 0.68, // Comenzar donde termina el volumen
-                    bottom: 0.25 ,// Dejar espacio para MACD
-                },
-                visible: true,
-                showLastLabel: true,
-            });
-            
-            // Serie MACD (debajo del RSI)
-            
-          // Histograma MACD
-            macdHistogramSeries = chart.addHistogramSeries({
-                priceScaleId: 'macd',
-                priceLineVisible: false,
-                lastValueVisible: false ,  
-                priceFormat: {
-                    type: 'price',
-                    precision: 1,
-                }
-            });
-            
-          
-            // Línea MACD
-            macdSeries = chart.addLineSeries({
-                color: '#2962FF', // Azul
-                lineWidth: 1,
-                priceScaleId: 'macd', // Escala separada para MACD
-                title: '',
-                crosshairMarkerVisible: false,
-                priceLineVisible: false,
-                lastValueVisible: false ,  
-            });
-            
-            // Línea de señal
-            macdSignalSeries = chart.addLineSeries({
-                color: '#FF6D00', // Naranja
-                lineWidth: 1,
-                priceScaleId: 'macd',
-                title: '',
-                crosshairMarkerVisible: false,
-                priceLineVisible: false,
-                lastValueVisible: false ,  
-            });
-            
-
-            
-            // Configurar escala MACD
-            chart.priceScale('macd').applyOptions({
-                scaleMargins: {
-                    top: 0.75, // Comenzar donde termina el RSI
-                    bottom: 0.10,
-                },
-                visible: true,
-                showLastLabel: true,
-            });
-            
- // Histograma Squeeze con 4 colores dinámicos
- 
- 
- 
- 
- 
- // Histograma Squeeze con 4 colores
-squeezeSeries = chart.addHistogramSeries({
-    priceScaleId: 'squeeze',
-    priceLineVisible: false,
-    //lastValueVisible: false,
-    priceFormat: {
-        type: 'price',
-        precision: 1,
-    },
     
-});
+    
+    function crearGrafico() {
+    const container = document.getElementById('chart-container');
 
+    chart = LightweightCharts.createChart(container, {
+        width: container.clientWidth,
+        height: container.clientHeight,
+        layout: { 
+            background: { color: "#101010" }, 
+            textColor: "#C3BCDB" 
+        },
+        crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
+        grid: { 
+            vertLines: { color: "#1c1c1c" }, 
+            horzLines: { color: "#1c1c1c" } 
+        },
+        timeScale: { 
+            timeVisible: true, 
+            secondsVisible: false,
+            rightOffset: 5 
+        },
+    });
 
+    // Serie de velas (precio)
+    candlestickSeries = chart.addCandlestickSeries({
+        upColor: 'rgba(38,166,154,1)',
+        downColor: 'rgba(239,83,80,1)',
+        borderVisible: true,
+        wickUpColor: 'rgba(38,166,154,1)',
+        wickDownColor: 'rgba(239,83,80,1)',
+    });
 
-// Configurar escala squeeze
-chart.priceScale('squeeze').applyOptions({
-    scaleMargins: {
-        top: 0.90, // Comenzar donde termina el RSI
-        bottom: 0.01,
-    },
-    visible: true,
-    showLastLabel: true,
-});
- 
-              
-              
-              
-           // Ajustar tamaño inicial
-            setTimeout(ajustarTamanoGrafico, 0);
-        }
-        
+    chart.applyOptions({
+        priceScale: {
+            scaleMargins: {
+                top: 0.10,
+                bottom: 0.40,
+            },
+        },
+    });
 
+    // EMAs
+    ema20Series = chart.addLineSeries({
+        color: '#2196F3',
+        lineWidth: 1,
+        title: '',
+        priceLineVisible: false,
+        crosshairMarkerVisible: false,
+        lastValueVisible: false,
+    });
 
+    ema50Series = chart.addLineSeries({
+        color: '#3dc200',
+        lineWidth: 1,
+        title: '',
+        priceLineVisible: false,
+        crosshairMarkerVisible: false,
+        lastValueVisible: false,
+    });
+
+    // Bandas de Bollinger
+    bbinferiorSeries = chart.addLineSeries({
+        color: '#486ed8',
+        lineWidth: 1,
+        title: '',
+        priceLineVisible: false,
+        crosshairMarkerVisible: false,
+        lastValueVisible: false,
+    });
+
+    bbsuperiorSeries = chart.addLineSeries({
+        color: '#486ed8',
+        lineWidth: 1,
+        title: '',
+        priceLineVisible: false,
+        crosshairMarkerVisible: false,
+        lastValueVisible: false,
+    });
+
+    // Supertrend
+    supertrendSeries = chart.addLineSeries({
+        color: 'white',
+        lineWidth: 1,
+        title: '',
+        priceLineVisible: false,
+        crosshairMarkerVisible: false,
+        lastValueVisible: false,
+    });
+
+    // Volumen
+    volumeSeries = chart.addHistogramSeries({
+        color: '#26a69a',
+        priceFormat: { type: 'volume' },
+        priceScaleId: 'volume',
+        priceLineVisible: false,
+        lastValueVisible: false,
+    });
+
+    chart.priceScale('volume').applyOptions({
+        scaleMargins: {
+            top: 0.60,
+            bottom: 0.35,
+        },
+    });
+
+    // RSI
+    rsiSeries = chart.addLineSeries({
+        color: '#a580ff',
+        lineWidth: 1,
+        priceScaleId: 'rsi',
+        title: '',
+        crosshairMarkerVisible: false,
+        priceLineVisible: false,
+    });
+
+    rsiOverSold = chart.addLineSeries({
+        color: '#5e5e5e',
+        lineWidth: 1,
+        priceScaleId: 'rsi',
+        lineStyle: 2,
+        crosshairMarkerVisible: false,
+        priceLineVisible: false,
+        lastValueVisible: false,
+    });
+
+    rsiOverBought = chart.addLineSeries({
+        color: '#5e5e5e',
+        lineWidth: 1,
+        priceScaleId: 'rsi',
+        lineStyle: 2,
+        crosshairMarkerVisible: false,
+        priceLineVisible: false,
+        lastValueVisible: false,
+    });
+
+    chart.priceScale('rsi').applyOptions({
+        scaleMargins: {
+            top: 0.68,
+            bottom: 0.25,
+        },
+        visible: true,
+        showLastLabel: true,
+    });
+
+    // MACD
+    macdSeries = chart.addLineSeries({
+        color: '#2962FF',
+        lineWidth: 1,
+        priceScaleId: 'macd',
+        title: '',
+        crosshairMarkerVisible: false,
+        priceLineVisible: false,
+        lastValueVisible: false,
+    });
+
+    macdSignalSeries = chart.addLineSeries({
+        color: '#FF6D00',
+        lineWidth: 1,
+        priceScaleId: 'macd',
+        title: '',
+        crosshairMarkerVisible: false,
+        priceLineVisible: false,
+        lastValueVisible: false,
+    });
+
+    macdHistogramSeries = chart.addHistogramSeries({
+        priceScaleId: 'macd',
+        priceLineVisible: false,
+        lastValueVisible: false,
+        priceFormat: {
+            type: 'price',
+            precision: 1,
+        },
+    });
+
+    chart.priceScale('macd').applyOptions({
+        scaleMargins: {
+            top: 0.75,
+            bottom: 0.10,
+        },
+        visible: true,
+        showLastLabel: true,
+    });
+
+    // Squeeze
+    squeezeSeries = chart.addHistogramSeries({
+        priceScaleId: 'squeeze',
+        priceLineVisible: false,
+        priceFormat: {
+            type: 'price',
+            precision: 1,
+        },
+    });
+
+    chart.priceScale('squeeze').applyOptions({
+        scaleMargins: {
+            top: 0.90,
+            bottom: 0.01,
+        },
+        visible: true,
+        showLastLabel: true,
+    });
+
+    // Liquidaciones Long
+    liquidacioneslongSeries = chart.addHistogramSeries({
+        priceScaleId: 'liquidaciones',
+        color: '#eeff95',//rojo
+        priceLineVisible: false,
+        lastValueVisible: false,
+        priceFormat: {
+            type: 'price',
+            precision: 1,
+        },
+    });
+
+    // Liquidaciones Short
+    liquidacionesshortSeries = chart.addHistogramSeries({
+        priceScaleId: 'liquidaciones',
+        color: '#ce00ff', //rosado 
+        priceLineVisible: false,
+        lastValueVisible: false,
+        priceFormat: {
+            type: 'price',
+            precision: 1,
+        },
+    });
+
+    chart.priceScale('liquidaciones').applyOptions({
+        scaleMargins: {
+            top: 0.01,
+            bottom: 0.90,
+        },
+        visible: true,
+        showLastLabel: true,
+    });
+
+    // Ajustar tamaño inicial
+    setTimeout(ajustarTamanoGrafico, 0);
+}
+    
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++  
 
@@ -541,40 +549,101 @@ async function cambiarTemporalidad(timeframe) {
 }
 
 // Actualizar gráfico con nuevos datos
+
+// Cargar datos iniciales
+async function cargarDatosIniciales() {
+    const data = await binanceAPI.loadHistoricalData();
+    binanceAPI.startLiveUpdates();
+    actualizarGrafico(data);
+}
+
+// Cambiar temporalidad
+async function cambiarTemporalidad(timeframe) {
+    const data = await binanceAPI.changeTimeframe(timeframe);
+    indicadores.resetCache();
+    indicadores2.resetCache();
+    actualizarGrafico(data);
+}
+
+
+
+ //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
+
+// Actualizar gráfico con nuevos datos
 function actualizarGrafico(data) {
     if (!data || data.close.length === 0) return;
 
-    // Calcular todos los indicadores de una sola vez
-    const indicadoresData = indicadores.calcularTodosLosIndicadores(data);
-    const indicadores2Data = indicadores2.calcularTodosLosIndicadores2(data);
+    // Calcular todos los indicadores de una sola vez  
+    const indicadoresData = indicadores.calcularTodosLosIndicadores(data);  
+    const indicadores2Data = indicadores2.calcularTodosLosIndicadores2(data);  
 
-    // Actualizar series con los datos ya calculados
-    candlestickSeries.setData(indicadoresData.candles);
-    volumeSeries.setData(indicadoresData.volumen);
-    rsiSeries.setData(indicadoresData.rsi);
-    rsiOverBought.setData(indicadoresData.lineasRSI.sobreCompra);
-    rsiOverSold.setData(indicadoresData.lineasRSI.sobreVenta);
-    ema20Series.setData(indicadoresData.ema20);
-    ema50Series.setData(indicadoresData.ema50);
-    macdSeries.setData(indicadoresData.macd);
-    macdSignalSeries.setData(indicadoresData.signal);
-    macdHistogramSeries.setData(indicadoresData.histograma);
-    bbinferiorSeries.setData(indicadoresData.bollinger.bb_inferior);
-    bbsuperiorSeries.setData(indicadoresData.bollinger.bb_superior);
-    squeezeSeries.setData(indicadores2Data.squeeze);
-    supertrendSeries.setData(indicadores2Data.supertrend);
-    const ultimoCierre = data.close[data.close.length - 2]; 
+    // Actualizar series con los datos ya calculados  
+    candlestickSeries.setData(indicadoresData.candles);  
+    volumeSeries.setData(indicadoresData.volumen);  
+    rsiSeries.setData(indicadoresData.rsi);  
+    rsiOverBought.setData(indicadoresData.lineasRSI.sobreCompra);  
+    rsiOverSold.setData(indicadoresData.lineasRSI.sobreVenta);  
+    ema20Series.setData(indicadoresData.ema20);  
+    ema50Series.setData(indicadoresData.ema50);  
+    macdSeries.setData(indicadoresData.macd);  
+    macdSignalSeries.setData(indicadoresData.signal);  
+    macdHistogramSeries.setData(indicadoresData.histograma);  
+    bbinferiorSeries.setData(indicadoresData.bollinger.bb_inferior);  
+    bbsuperiorSeries.setData(indicadoresData.bollinger.bb_superior);  
+    squeezeSeries.setData(indicadores2Data.squeeze);  
+    supertrendSeries.setData(indicadores2Data.supertrend);  
+    const ultimoCierre = data.close[data.close.length - 2];   
+   
     
-  
-    // Actualizar precio actual
-    actualizarPrecioActual();
     
- 
-    // Notificar al manejador de alertas para actualizar
-    if (window.manejadorAlertas) {
-        window.manejadorAlertas.actualizarAlertas(indicadoresData, indicadores2Data,ultimoCierre);
+    
+   //----—------------------—-----------------------------—-------------
+ // Actualizar series de liquidaciones si hay datos
+if (data.liquidationData && data.liquidationData.time) {  
+    // Crear arrays formateados para el gráfico
+    const liquidacionesLongData = [];
+    const liquidacionesShortData = [];
+    
+    // Preparar datos para el formato que espera el gráfico
+    for (let i = 0; i < data.liquidationData.time.length; i++) {
+        // Solo añadir puntos con valores mayores que cero
+        if (data.liquidationData.long[i] > 0) {
+            liquidacionesLongData.push({
+                time: data.liquidationData.time[i],
+                value: -data.liquidationData.long[i]  // Convertir a negativo
+            });
+        }
+        
+        if (data.liquidationData.short[i] > 0) {
+            liquidacionesShortData.push({
+                time: data.liquidationData.time[i],
+                value: data.liquidationData.short[i]
+            });
+        }
+    }
+    
+    // Actualizar series de liquidaciones
+    liquidacioneslongSeries.setData(liquidacionesLongData);
+    liquidacionesshortSeries.setData(liquidacionesShortData);
+}
+    
+  //----—------------------—-----------------------------—-------------
+    
+    
+    
+    // Actualizar precio actual  
+    actualizarPrecioActual();  
+    
+    // Notificar al manejador de alertas para actualizar  
+    if (window.manejadorAlertas) {  
+        window.manejadorAlertas.actualizarAlertas(indicadoresData, indicadores2Data, ultimoCierre);  
     }
 }
+
+
+
 
 
  //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -634,4 +703,5 @@ function actualizarVisibilidadIndicadores() {
     </script>
 </body>
 </html>
+
 
