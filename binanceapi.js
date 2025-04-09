@@ -50,7 +50,7 @@ class BinanceAPI {
         
         // Limpiar datos de liquidaciones antes de cargar los nuevos
         this.clearLiquidationData();
-        this.clearHistoricalData();
+    
         
         // Primero cargamos los datos históricos de velas
         await this.loadHistoricalData();
