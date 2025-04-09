@@ -14,18 +14,25 @@ class BinanceAPI {
             long: [],
             short: []
         };
+
         this.currentTimeframe = '5m';
         this.priceCurrent = 0;
         this.onUpdateCallback = null;
         this.isLoadingLiquidations = false;
+        this.loading = false;
 
-        // Inicializar datos automáticamente al crear la instancia
         this.initializeData();
     }
 
     async initializeData() {
-        await this.loadLiquidationData();
-        this.startLiveUpdates();
+        this.loading = true;
+        try {
+            await this.loadHistoricalData();
+            this.startLiveUpdates();
+            this.loadLiquidationData(); // Cargar en segundo plano
+        } finally {
+            this.loading = false;
+        }
     }
 
     setUpdateCallback(callback) {
@@ -42,42 +49,61 @@ class BinanceAPI {
     }
 
     async changeTimeframe(timeframe) {
-        if (this.socket) {
-            this.socket.close();
+        try {
+            this.loading = true;
+            this.sendUpdate();
+
+            if (this.socket) {
+                this.socket.close();
+            }
+
+            // Limpiar todos los datos
+            for (const key in this.candleData) {
+                this.candleData[key] = [];
+            }
+            this.clearLiquidationData();
+            
+            this.currentTimeframe = timeframe;
+
+            // Cargar datos principales
+            await this.loadHistoricalData();
+            this.startLiveUpdates();
+            
+            // Iniciar carga de liquidaciones en segundo plano
+            this.loadLiquidationData();
+
+            return this.candleData;
+        } catch (error) {
+            console.error("Error changing timeframe:", error);
+            if (this.onUpdateCallback) {
+                this.onUpdateCallback({ 
+                    error: true, 
+                    message: error.message,
+                    candleData: this.candleData,
+                    liquidationData: this.liquidationData
+                });
+            }
+            return this.candleData;
+        } finally {
+            this.loading = false;
+            this.sendUpdate();
         }
-
-        this.currentTimeframe = timeframe;
-        
-        // Limpiar datos de liquidaciones antes de cargar los nuevos
-        this.clearLiquidationData();
-    
-        
-        // Primero cargamos los datos históricos de velas
-        await this.loadHistoricalData();
-        
-        // Luego enviamos una actualización sin liquidaciones
-        this.sendUpdate();
-        
-        // Finalmente cargamos las liquidaciones
-        await this.loadLiquidationData();
-        
-        // Y enviamos otra actualización ya con las liquidaciones
-        this.sendUpdate();
-        
-        this.startLiveUpdates();
-
-        return this.candleData;
     }
 
     clearLiquidationData() {
-        // Limpiar todos los arrays de liquidaciones
         for (const key in this.liquidationData) {
             this.liquidationData[key] = [];
         }
     }
 
     sendUpdate() {
-        const dataToSend = { ...this.candleData, liquidationData: this.liquidationData };
+        const dataToSend = { 
+            ...this.candleData, 
+            liquidationData: this.liquidationData,
+            loading: this.loading,
+            loadingLiquidations: this.isLoadingLiquidations
+        };
+        
         if (this.onUpdateCallback) {
             this.onUpdateCallback(dataToSend);
         }
@@ -107,7 +133,6 @@ class BinanceAPI {
                 this.candleData.close[lastIndex] = parseFloat(kline.c);
                 this.candleData.volume[lastIndex] = parseFloat(kline.v);
             } else {
-                // Nueva vela: agregar y actualizar liquidaciones
                 this.candleData.time.push(newTime);
                 this.candleData.open.push(parseFloat(kline.o));
                 this.candleData.high.push(parseFloat(kline.h));
@@ -131,6 +156,7 @@ class BinanceAPI {
             const res = await fetch(`https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=${this.currentTimeframe}&limit=500`);
             const data = await res.json();
 
+            // Limpiar antes de cargar nuevos datos
             for (const key in this.candleData) {
                 this.candleData[key] = [];
             }
@@ -148,10 +174,10 @@ class BinanceAPI {
                 this.priceCurrent = this.candleData.close[this.candleData.close.length - 1];
             }
 
-            console.log(`✅ Cargadas ${data.length} velas para temporalidad ${this.currentTimeframe}`);
+            console.log(`✅ Cargadas ${data.length} velas para ${this.currentTimeframe}`);
             return this.candleData;
         } catch (error) {
-            console.error("Error obteniendo datos históricos:", error);
+            console.error("Error en datos históricos:", error);
             return this.candleData;
         }
     }
@@ -159,8 +185,8 @@ class BinanceAPI {
     async loadLiquidationData() {
         try {
             this.isLoadingLiquidations = true;
+            this.sendUpdate(); // Actualizar estado de carga
             
-            // Seleccionar la URL correcta según la temporalidad
             let liquidationUrl;
             let timeframeLabel;
             
@@ -190,24 +216,21 @@ class BinanceAPI {
                     timeframeLabel = '1d';
                     break;
                 default:
-                    // Para cualquier otra temporalidad usamos los datos de 5 minutos como fallback
                     liquidationUrl = 'https://liquidacionesjs.vercel.app/liquidaciones5min?download';
-                    timeframeLabel = '5m (default)';
+                    timeframeLabel = '5m';
             }
             
             const res = await fetch(liquidationUrl);
             let data = await res.json();
 
-            // Limpiar los datos de liquidaciones antes de cargar los nuevos
             this.clearLiquidationData();
 
             if (!Array.isArray(data)) {
                 if (typeof data === 'string') {
                     data = JSON.parse('[' + data + ']');
                 } else {
-                    console.error("Formato de datos de liquidaciones inesperado");
-                    this.isLoadingLiquidations = false;
-                    return this.liquidationData;
+                    console.error("Formato de liquidaciones inesperado");
+                    return;
                 }
             }
 
@@ -217,23 +240,15 @@ class BinanceAPI {
                 this.liquidationData.short.push(parseFloat(item.short) || 0);
             });
 
-            if (this.liquidationData.time.length > 1000) {
-                const excessEntries = this.liquidationData.time.length - 1000;
-                for (const key in this.liquidationData) {
-                    this.liquidationData[key] = this.liquidationData[key].slice(excessEntries);
-                }
-            }
-
-            console.log(`✅ Cargadas ${data.length} liquidaciones (datos de ${timeframeLabel})`);
-            this.isLoadingLiquidations = false;
-            return this.liquidationData;
+            console.log(`✅ Liquidaciones cargadas (${timeframeLabel})`);
+            
         } catch (error) {
-            console.error("Error obteniendo datos de liquidaciones:", error);
+            console.error("Error en liquidaciones:", error);
+        } finally {
             this.isLoadingLiquidations = false;
-            return this.liquidationData;
+            this.sendUpdate();
         }
     }
 }
 
-// Exportar la clase
 window.BinanceAPI = BinanceAPI;
