@@ -66,7 +66,7 @@ class ManejadorAlertas {
                          `PRECIO ACTUAL: ${precioActual.toFixed(2)}\n` +
                          `EMA20: ${ema20.toFixed(2)}\n` +
                          `RSI: ${rsi.toFixed(2)}\n\n\n` +
-                          `________________________________`
+                          `========================`
             };
 
             // Enviar la solicitud al webhook
