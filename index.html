@@ -492,7 +492,7 @@ function configurarSelectorIndicadores() {
     // Liquidaciones Long
     liquidacioneslongSeries = chart.addHistogramSeries({
         priceScaleId: 'liquidaciones',
-        color: '#e7db74',//amarillo 
+        color: '#baa100',//rojo
         priceLineVisible: false,
         lastValueVisible: false,
         priceFormat: {
@@ -515,8 +515,8 @@ function configurarSelectorIndicadores() {
 
     chart.priceScale('liquidaciones').applyOptions({
         scaleMargins: {
-            top: 0.01,
-            bottom: 0.99,
+            top: 0.10,
+            bottom: 0.85,
         },
         visible: true,
         showLastLabel: true,
