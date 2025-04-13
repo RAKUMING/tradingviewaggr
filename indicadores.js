@@ -398,7 +398,7 @@ class Indicadores {
         const volumen = this.colorearVolumen(data);
         const rsi = this.obtenerDatosRSI(data);
         const lineasRSI = this.obtenerLineasRSI(data);
-        const ema20 = this.obtenerDatosEMA(data, 20);
+        const ema20 = this.obtenerDatosEMA(data, 200);
         const ema50 = this.obtenerDatosEMA(data, 55);
         const macdData = this.obtenerDatosMACD(data);
         const atr = this.obtenerDatosATR(data);
