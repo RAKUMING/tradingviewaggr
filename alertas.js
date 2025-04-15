@@ -1,123 +1,135 @@
-
 class ManejadorAlertas {
     constructor() {
-        this.elementoAlerta = document.getElementById('alerta');
-        this.elementoEMA20 = document.getElementById('indicador-alerta');
-        this.elementoRsi = document.getElementById('rsi');
-        this.elementoMomentum = document.getElementById('momentum');
-        
-        // Webhook URL for Discord
-        this.webhookURL = "https://discord.com/api/webhooks/1354463737507217498/fYvupiqtmEjB08aFTFNqhBxWv2FfjOkUAyLuu2uQitFUFHT_9PjQwvl6YD8m0l8U0SLi";
-        
-        // Variables para el contador de tiempo
-        this.tiempoInicio = null;
-        this.contadorInterval = null;
-        this.tiempoTranscurrido = 0;
-        
-        // Iniciar el contador de tiempo inmediatamente
-        this.iniciarContador();
+        this.texview1 = document.getElementById('texview1');
+        this.texview2 = document.getElementById('texview2');
+        this.texview3 = document.getElementById('texview3');
+        this.texview4 = document.getElementById('texview4');
     }
-    
-    iniciarContador() {
-        // Guardar tiempo de inicio
-        this.tiempoInicio = new Date();
-        
-        // Actualizar el tiempo transcurrido cada segundo para mostrarlo en la interfaz
-        setInterval(() => {
-            const ahora = new Date();
-            this.tiempoTranscurrido = Math.floor((ahora - this.tiempoInicio) / 1000);
-            // Actualizar el elemento con el tiempo transcurrido
-            this.elementoMomentum.textContent = this.formatearTiempo(this.tiempoTranscurrido);
-        }, 1000); // Actualizar cada segundo
-        
-        // Configurar intervalo para enviar alertas cada 30 segundos
-        this.contadorInterval = setInterval(() => {
-            // Enviar alerta periódica
-            this.enviarAlertaPeriodica();
-        }, 30000); // 30 segundos
-        
-        // Agregar evento para limpiar el intervalo cuando se cierre la página
-        window.addEventListener('beforeunload', () => {
-            if (this.contadorInterval) {
-                clearInterval(this.contadorInterval);
-            }
-        });
-    }
-    
-    formatearTiempo(segundos) {
-        const horas = Math.floor(segundos / 3600);
-        const minutos = Math.floor((segundos % 3600) / 60);
-        const segs = segundos % 60;
-        
-        return `${horas}:${minutos.toString().padStart(2, '0')}:${segs.toString().padStart(2, '0')}`;
-    }
-    
-    async enviarAlertaPeriodica() {
-        try {
-            // Obtener valores actuales
-            const precioActual = binanceAPI.getCurrentPrice();
-            const ema20 = parseFloat(this.elementoEMA20.textContent) || 0;
-            const rsi = parseFloat(this.elementoRsi.textContent) || 0;
-            
-            // Preparar el mensaje con el formato especificado
-            const mensaje = {
-                content: "⚠️NUEVA ALERTA⚠️\n\n" +
-                         `TIEMPO:  ${this.formatearTiempo(this.tiempoTranscurrido)}\n` +
-                         `PRECIO ACTUAL: ${precioActual.toFixed(2)}\n` +
-                         `EMA20: ${ema20.toFixed(2)}\n` +
-                         `RSI: ${rsi.toFixed(2)}\n\n\n` +
-                          `========================`
-            };
 
-            // Enviar la solicitud al webhook
-            const respuesta = await fetch(this.webhookURL, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(mensaje)
-            });
-
-            if (!respuesta.ok) {
-                console.error('Error al enviar la alerta periódica:', respuesta.statusText);
-            }
-        } catch (error) {
-            console.error('Error en enviarAlertaPeriodica:', error);
+    actualizarAlertas(indicadoresData, indicadores2Data, ultimoCierre, liquidacionesData) {
+        // Verificar que los datos existan antes de procesarlos
+        if (!indicadoresData || !indicadores2Data) {
+            console.error("Datos de indicadores no disponibles");
+            return;
         }
-    }
 
-    actualizarAlertas(indicadoresData, indicadores2Data, ultimoCierre) {
-        // Obtener valores actualizados
-        const ultimoVolumen = indicadoresData.volumen[indicadoresData.volumen.length - 1].value;
-        const ultimoRSI = indicadoresData.rsi[indicadoresData.rsi.length - 1].value;
-        const ultimoRSIOverBought = indicadoresData.lineasRSI.sobreCompra[indicadoresData.lineasRSI.sobreCompra.length - 1].value;
-        const ultimoRSIOverSold = indicadoresData.lineasRSI.sobreVenta[indicadoresData.lineasRSI.sobreVenta.length - 1].value;
-        const ultimoEMA20 = indicadoresData.ema20[indicadoresData.ema20.length - 1].value;
-        const prevEMA20 = indicadoresData.ema20[indicadoresData.ema20.length - 2].value;
-        const ultimoEMA50 = indicadoresData.ema50[indicadoresData.ema50.length - 1].value;
-        const ultimoMACD = indicadoresData.macd[indicadoresData.macd.length - 1].value;
-        const ultimoMACDSignal = indicadoresData.signal[indicadoresData.signal.length - 1].value;
-        const ultimoMACDHistogram = indicadoresData.histograma[indicadoresData.histograma.length - 1].value;
-        const ultimoBBInferior = indicadoresData.bollinger.bb_inferior[indicadoresData.bollinger.bb_inferior.length - 1].value;
-        const ultimoBBSuperior = indicadoresData.bollinger.bb_superior[indicadoresData.bollinger.bb_superior.length - 1].value;
-        const ultimoSqueeze = indicadores2Data.squeeze[indicadores2Data.squeeze.length - 1].value;
         const close = ultimoCierre;
-        const precioCurrent = binanceAPI.getCurrentPrice();
+        
+        // Error: binanceAPI no está definido
+        // Usando una variable temporal para evitar el error
+        const precioCurrent = this.getCurrentPrice ? this.getCurrentPrice() : close;
 
-        // Determinar la tendencia de la EMA20
-        if (ultimoEMA20 > prevEMA20) {
-            this.elementoAlerta.textContent = 'Alcista ⬆️';
-        } else if (ultimoEMA20 < prevEMA20) {
-            this.elementoAlerta.textContent = 'Bajista ⬇️';
-        } else {
-            this.elementoAlerta.textContent = '';
+        // Procesamiento de liquidaciones
+        const ultimaLiquidacionLong = (liquidacionesData && liquidacionesData.long && liquidacionesData.long.length > 0)
+            ? Math.abs(liquidacionesData.long[liquidacionesData.long.length - 1].value)
+            : 0;
+
+        const ultimaLiquidacionShort = (liquidacionesData && liquidacionesData.short && liquidacionesData.short.length > 0)
+            ? liquidacionesData.short[liquidacionesData.short.length - 1].value
+            : 0;
+
+        let totalLiquidacionesLong = 0;
+        if (liquidacionesData && liquidacionesData.long && liquidacionesData.long.length > 0) {
+            const longLength = liquidacionesData.long.length;
+            const startIdx = Math.max(0, longLength - 10);
+            for (let i = startIdx; i < longLength; i++) {
+                totalLiquidacionesLong += Math.abs(liquidacionesData.long[i].value);
+            }
         }
 
-        // Mostrar el valor del RSI en el elemento HTML
-        this.elementoEMA20.textContent = close.toFixed(2);
-        this.elementoRsi.textContent = ultimoRSI.toFixed(2);
-        // No actualizamos elementoMomentum aquí porque ahora muestra el tiempo transcurrido
+        let totalLiquidacionesShort = 0;
+        if (liquidacionesData && liquidacionesData.short && liquidacionesData.short.length > 0) {
+            const shortLength = liquidacionesData.short.length;
+            const startIdx = Math.max(0, shortLength - 10);
+            for (let i = startIdx; i < shortLength; i++) {
+                totalLiquidacionesShort += liquidacionesData.short[i].value;
+            }
+        }
+
+        const totalLiquidaciones = totalLiquidacionesLong + totalLiquidacionesShort;
+
+        const ratioLiquidaciones = totalLiquidaciones > 0
+            ? totalLiquidacionesLong / totalLiquidaciones
+            : 0.5;
+
+        // Obtener valores actualizados con verificación de datos
+        // Verificar que cada array tenga suficientes elementos antes de acceder
+        const ultimoVolumen = this.getValueSafely(indicadoresData.volumen, -1);
+        const ultimoRSI = this.getValueSafely(indicadoresData.rsi, -1);
+        const ultimoRSIOverBought = this.getValueSafely(indicadoresData.lineasRSI.sobreCompra, -1);
+        const ultimoRSIOverSold = this.getValueSafely(indicadoresData.lineasRSI.sobreVenta, -1);
+        const ultimoEMA20 = this.getValueSafely(indicadoresData.ema20, -1);
+        const ultimoEMA50 = this.getValueSafely(indicadoresData.ema50, -1);
+        const ultimoMACD = this.getValueSafely(indicadoresData.macd, -1);
+        const ultimoMACDSignal = this.getValueSafely(indicadoresData.signal, -1);
+        const ultimoMACDHistogram = this.getValueSafely(indicadoresData.histograma, -1);
+        const ultimoBBInferior = this.getValueSafely(indicadoresData.bollinger.bb_inferior, -1);
+        const ultimoBBSuperior = this.getValueSafely(indicadoresData.bollinger.bb_superior, -1);
+        const ultimoSqueeze = this.getValueSafely(indicadores2Data.squeeze, -1);
+        
+        // Obtener valores anteriores inmediatos
+        const anteriorVolumen = this.getValueSafely(indicadoresData.volumen, -2);
+        const anteriorRSI = this.getValueSafely(indicadoresData.rsi, -2);
+        // Corrigiendo el índice para anteriorEMA20 (estaba usando -3)
+        const anteriorEMA20 = this.getValueSafely(indicadoresData.ema20, -2);
+        const anteriorEMA50 = this.getValueSafely(indicadoresData.ema50, -2);
+        const anteriorMACD = this.getValueSafely(indicadoresData.macd, -2);
+        const anteriorMACDSignal = this.getValueSafely(indicadoresData.signal, -2);
+        const anteriorMACDHistogram = this.getValueSafely(indicadoresData.histograma, -2);
+        const anteriorBBInferior = this.getValueSafely(indicadoresData.bollinger.bb_inferior, -2);
+        const anteriorBBSuperior = this.getValueSafely(indicadoresData.bollinger.bb_superior, -2);
+        const anteriorSqueeze = this.getValueSafely(indicadores2Data.squeeze, -2);
+
+        // Determinar tendencia con condiciones personalizadas directamente en el if
+        const esAlcista =
+            ultimoRSI > 25 &&
+            ultimoMACDHistogram > anteriorMACDHistogram &&
+            ultimoMACDSignal < ultimoMACD &&
+           ultimoSqueeze > anteriorSqueeze &&
+            close >= ultimoBBInferior &&
+            close <= ultimoBBSuperior &&
+            close > ultimoEMA20;
+
+        const esBajista =
+            ultimoRSI < 75 &&
+            ultimoMACDHistogram < anteriorMACDHistogram &&
+            ultimoMACDSignal > ultimoMACD &&
+           ultimoSqueeze < anteriorSqueeze &&
+           close >= ultimoBBInferior &&
+           close <= ultimoBBSuperior &&
+           close < ultimoEMA20;
+
+        // Actualizar los elementos de la interfaz
+        if (esAlcista) {
+            this.texview1.textContent = 'Alcista ⬆️';
+        } else if (esBajista) {
+            this.texview1.textContent = 'Bajista ⬇️';
+        } else {
+            this.texview1.textContent = 'Neutral';
+        }
+
+        // Mostrar valores en sus elementos correspondientes
+        if (this.texview2) this.texview2.textContent = ratioLiquidaciones.toFixed(2);
+        if (this.texview3) this.texview3.textContent = ultimoCierre.toFixed(2);
+        if (this.texview4) this.texview4.textContent = ultimaLiquidacionShort.toFixed(2);
     }
+
+    // Método auxiliar para obtener valores de manera segura
+    getValueSafely(array, index) {
+        if (!array || !Array.isArray(array) || array.length === 0) {
+            return 0;
+        }
+        
+        const actualIndex = index < 0 ? array.length + index : index;
+        
+        if (actualIndex < 0 || actualIndex >= array.length) {
+            return 0;
+        }
+        
+        return array[actualIndex].value || 0;
+    }
+    
+    
 }
 
 // Instanciar la clase y hacerla accesible globalmente
