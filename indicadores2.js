@@ -115,7 +115,7 @@ class Indicadores2 {
         }).filter(point => point !== null);
     }
 
-    calcularSuperTrend(data, length = 10, multiplier = 3) {
+    calcularSuperTrend(data, length = 10, multiplier = 1.5) {
         if (this.cache.supertrend && this.cache.supertrend.length === data.close.length) {
             return this.cache.supertrend;
         }
