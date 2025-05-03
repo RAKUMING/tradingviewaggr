@@ -5,7 +5,7 @@ class TimeframeSelector {
         this.containerId = options.containerId || 'timeframes';
         this.buttonClass = options.buttonClass || 'timeframe-btn';
         this.activeClass = options.activeClass || 'active';
-        this.defaultTimeframe = options.defaultTimeframe || '1m';
+        this.defaultTimeframe = options.defaultTimeframe || '1h';
         this.onTimeframeChange = options.onTimeframeChange || null;
         
         this.container = document.getElementById(this.containerId);
