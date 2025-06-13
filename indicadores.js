@@ -326,21 +326,15 @@ class Indicadores {
             value: signal[i]
         })).filter(point => point.value !== null);
 
-        const histogramaData = data.time.map((time, i) => {
-            if (histograma[i] === null) return null;
-            
+
+const histogramaData = data.time.map((time, i) => {
             let color;
-            const valorActual = histograma[i];
-            const valorAnterior = i > 0 ? histograma[i - 1] : null;
-            
-            if (valorActual > 0) {
-                // Verde cuando es positivo
-                color = (valorAnterior !== null && valorActual > valorAnterior) ? '#26a69a' : '#4caf50';
+            if (histograma[i] > 0) {
+                color = (histograma[i] > histograma[i - 1]) ? '#80ff98' : '#00820c'; // Verde fuerte y verde claro
             } else {
-                // Rojo cuando es negativo
-                color = (valorAnterior !== null && valorActual < valorAnterior) ? '#ef5350' : '#f44336';
-            }
-            
+                color = (histograma[i] < histograma[i - 1]) ? '#ff9595' : '#c50800'; // Rojo fuerte y rojo claro
+
+        
             return {
                 time: time,
                 value: valorActual,
