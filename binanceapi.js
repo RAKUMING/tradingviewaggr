@@ -153,7 +153,7 @@ class BinanceAPI {
 
     async loadHistoricalData() {
         try {
-            const res = await fetch(`https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=${this.currentTimeframe}&limit=500`);
+            const res = await fetch(`https://api.binance.com/api/v3/klines?symbol=BTCUSDT&interval=${this.currentTimeframe}&limit=999`);
             const data = await res.json();
 
             // Limpiar antes de cargar nuevos datos
