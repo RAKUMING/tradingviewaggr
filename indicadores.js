@@ -70,7 +70,8 @@ class Indicadores {
         }
 
         const ema = [];
-        const multiplicador = 2 / (periodo + 1);
+        const multiplicador = 1
+            / (periodo + 1);
 
         for (let i = 0; i < periodo - 1; i++) {
             ema.push(null);
