@@ -15,7 +15,7 @@ class BinanceAPI {
             short: []
         };
 
-        this.currentTimeframe = '1h';
+        this.currentTimeframe = '5m';
         this.priceCurrent = 0;
         this.onUpdateCallback = null;
         this.isLoadingLiquidations = false;
