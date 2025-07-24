@@ -36,8 +36,8 @@ class ManejadorAlertas {
         const supertrend = this.getValueSafely(indicadores2Data?.supertrend, -1)?.value;
 
         // Datos de liquidaciones recientes
-        const liqShort = Array.isArray(liquidationData?.short) ? liquidationData.short.at(-15) ?? 0 : 0;
-        const liqLong = Array.isArray(liquidationData?.long) ? liquidationData.long.at(-5) ?? 0 : 0;
+        const liqShort = Array.isArray(liquidationData?.short) ? liquidationData.short.at(-2) ?? 0 : 0;
+        const liqLong = Array.isArray(liquidationData?.long) ? liquidationData.long.at(-2) ?? 0 : 0;
 
         // =================== Mostrar tendencia EMA ===================
         if (this.texview1) {
