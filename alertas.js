@@ -1,136 +1,81 @@
 class ManejadorAlertas {
+
+    // =================== Inicialización y elementos del DOM ===================
     constructor() {
-        this.texview1 = document.getElementById('texview1');
-        this.texview2 = document.getElementById('texview2');
-        this.texview3 = document.getElementById('texview3');
-        this.texview4 = document.getElementById('texview4');
+        this.texview1 = document.getElementById('texview1'); // EMA: Alcista/Bajista
+        this.texview2 = document.getElementById('texview2'); // SuperTrend: Alcista/Bajista
+        this.texview3 = document.getElementById('texview3'); // Liquidación SHORT
+        this.texview4 = document.getElementById('texview4'); // Liquidación LONG
+        this.texview5 = document.getElementById('texview5'); // Estado del sistema 🟢 ON
+
+        this.latestIndicadoresData = {};     // Indicadores técnicos principales
+        this.latestIndicadores2Data = {};    // Indicadores secundarios (como SuperTrend)
+        this.latestLiquidationData = {};     // Datos de liquidaciones
     }
 
-    actualizarAlertas(indicadoresData, indicadores2Data, ultimoCierre, liquidacionesData) {
-        // Verificar que los datos existan antes de procesarlos
-        if (!indicadoresData || !indicadores2Data) {
-            console.error("Datos de indicadores no disponibles");
-            return;
-        }
+    // =================== Actualiza todos los valores y muestra resumen ===================
+    actualizarAlertas(indicadoresData, indicadores2Data = {}, liquidationData = {}) {
+        this.latestIndicadoresData = indicadoresData;
+        this.latestIndicadores2Data = indicadores2Data;
+        this.latestLiquidationData = liquidationData;
 
-        const close = ultimoCierre;
-        
-        // Error: binanceAPI no está definido
-        // Usando una variable temporal para evitar el error
-        const precioCurrent = this.getCurrentPrice ? this.getCurrentPrice() : close;
+        // Indicadores técnicos disponibles
+        const rsi = this.getValueSafely(indicadoresData?.rsi, -1)?.value;
+        const ema20 = this.getValueSafely(indicadoresData?.ema20, -1)?.value;
+        const ema50 = this.getValueSafely(indicadoresData?.ema50, -1)?.value;
+        const macd = this.getValueSafely(indicadoresData?.macd, -1)?.value;
+        const signal = this.getValueSafely(indicadoresData?.signal, -1)?.value;
+        const histograma = this.getValueSafely(indicadoresData?.histograma, -1)?.value;
+        const bb_inferior = this.getValueSafely(indicadoresData?.bollinger?.bb_inferior, -1)?.value;
+        const bb_superior = this.getValueSafely(indicadoresData?.bollinger?.bb_superior, -1)?.value;
+        const volumen = this.getValueSafely(indicadoresData?.volumen, -1)?.value;
+        const close = this.getValueSafely(indicadoresData?.candles, -1)?.close;
 
-        // Procesamiento de liquidaciones
-        const ultimaLiquidacionLong = (liquidacionesData && liquidacionesData.long && liquidacionesData.long.length > 0)
-            ? Math.abs(liquidacionesData.long[liquidacionesData.long.length - 1].value)
-            : 0;
+        // Indicadores secundarios
+        const squeeze = this.getValueSafely(indicadores2Data?.squeeze, -1)?.value;
+        const supertrend = this.getValueSafely(indicadores2Data?.supertrend, -1)?.value;
 
-        const ultimaLiquidacionShort = (liquidacionesData && liquidacionesData.short && liquidacionesData.short.length > 0)
-            ? liquidacionesData.short[liquidacionesData.short.length - 1].value
-            : 0;
+        // Datos de liquidaciones recientes
+        const liqShort = Array.isArray(liquidationData?.short) ? liquidationData.short.at(-15) ?? 0 : 0;
+        const liqLong = Array.isArray(liquidationData?.long) ? liquidationData.long.at(-5) ?? 0 : 0;
 
-        let totalLiquidacionesLong = 0;
-        if (liquidacionesData && liquidacionesData.long && liquidacionesData.long.length > 0) {
-            const longLength = liquidacionesData.long.length;
-            const startIdx = Math.max(0, longLength - 10);
-            for (let i = startIdx; i < longLength; i++) {
-                totalLiquidacionesLong += Math.abs(liquidacionesData.long[i].value);
+        // =================== Mostrar tendencia EMA ===================
+        if (this.texview1) {
+            if (ema20 && ema50) {
+                const tendencia = ema20 > ema50 ? '📈 EMA Alcista' : '📉 EMA Bajista';
+                this.texview1.textContent = tendencia;
+            } else {
+                this.texview1.textContent = 'Tendencia EMA: N/A';
             }
         }
 
-        let totalLiquidacionesShort = 0;
-        if (liquidacionesData && liquidacionesData.short && liquidacionesData.short.length > 0) {
-            const shortLength = liquidacionesData.short.length;
-            const startIdx = Math.max(0, shortLength - 10);
-            for (let i = startIdx; i < shortLength; i++) {
-                totalLiquidacionesShort += liquidacionesData.short[i].value;
+        // =================== Mostrar SuperTrend ===================
+        if (this.texview2) {
+            if (supertrend !== undefined) {
+                const tendenciaST = supertrend > 0 ? '📈 Supertrend Alcista' : '📉 Supertrend Bajista';
+                this.texview2.textContent = tendenciaST;
+            } else {
+                this.texview2.textContent = 'Tendencia ST: N/A';
             }
         }
 
-        const totalLiquidaciones = totalLiquidacionesLong + totalLiquidacionesShort;
+        // =================== Mostrar Liquidaciones ===================
+        if (this.texview3) this.texview3.textContent = `Liq.SHORT: ${liqShort.toLocaleString('es-ES')}`;
+        if (this.texview4) this.texview4.textContent = `Liq.LONG: ${liqLong.toLocaleString('es-ES')}`;
 
-        const ratioLiquidaciones = totalLiquidaciones > 0
-            ? totalLiquidacionesLong / totalLiquidaciones
-            : 0.5;
-
-        // Obtener valores actualizados con verificación de datos
-        // Verificar que cada array tenga suficientes elementos antes de acceder
-        const ultimoVolumen = this.getValueSafely(indicadoresData.volumen, -1);
-        const ultimoRSI = this.getValueSafely(indicadoresData.rsi, -1);
-        const ultimoRSIOverBought = this.getValueSafely(indicadoresData.lineasRSI.sobreCompra, -1);
-        const ultimoRSIOverSold = this.getValueSafely(indicadoresData.lineasRSI.sobreVenta, -1);
-        const ultimoEMA20 = this.getValueSafely(indicadoresData.ema20, -1);
-        const ultimoEMA50 = this.getValueSafely(indicadoresData.ema50, -1);
-        const ultimoMACD = this.getValueSafely(indicadoresData.macd, -1);
-        const ultimoMACDSignal = this.getValueSafely(indicadoresData.signal, -1);
-        const ultimoMACDHistogram = this.getValueSafely(indicadoresData.histograma, -1);
-        const ultimoBBInferior = this.getValueSafely(indicadoresData.bollinger.bb_inferior, -1);
-        const ultimoBBSuperior = this.getValueSafely(indicadoresData.bollinger.bb_superior, -1);
-        const ultimoSqueeze = this.getValueSafely(indicadores2Data.squeeze, -1);
-        
-        // Obtener valores anteriores inmediatos
-        const anteriorVolumen = this.getValueSafely(indicadoresData.volumen, -2);
-        const anteriorRSI = this.getValueSafely(indicadoresData.rsi, -2);
-        // Corrigiendo el índice para anteriorEMA20 (estaba usando -3)
-        const anteriorEMA20 = this.getValueSafely(indicadoresData.ema20, -2);
-        const anteriorEMA50 = this.getValueSafely(indicadoresData.ema50, -2);
-        const anteriorMACD = this.getValueSafely(indicadoresData.macd, -2);
-        const anteriorMACDSignal = this.getValueSafely(indicadoresData.signal, -2);
-        const anteriorMACDHistogram = this.getValueSafely(indicadoresData.histograma, -2);
-        const anteriorBBInferior = this.getValueSafely(indicadoresData.bollinger.bb_inferior, -2);
-        const anteriorBBSuperior = this.getValueSafely(indicadoresData.bollinger.bb_superior, -2);
-        const anteriorSqueeze = this.getValueSafely(indicadores2Data.squeeze, -2);
-
-        // Determinar tendencia con condiciones personalizadas directamente en el if
-        const esAlcista =
-            ultimoRSI > 25 &&
-            ultimoMACDHistogram > anteriorMACDHistogram &&
-            ultimoMACDSignal < ultimoMACD &&
-           ultimoSqueeze > anteriorSqueeze &&
-            close >= ultimoBBInferior &&
-            close <= ultimoBBSuperior &&
-            close > ultimoEMA20;
-
-        const esBajista =
-            ultimoRSI < 75 &&
-            ultimoMACDHistogram < anteriorMACDHistogram &&
-            ultimoMACDSignal > ultimoMACD &&
-           ultimoSqueeze < anteriorSqueeze &&
-           close >= ultimoBBInferior &&
-           close <= ultimoBBSuperior &&
-           close < ultimoEMA20;
-
-        // Actualizar los elementos de la interfaz
-        if (esAlcista) {
-            this.texview1.textContent = 'Alcista ⬆️';
-        } else if (esBajista) {
-            this.texview1.textContent = 'Bajista ⬇️';
-        } else {
-            this.texview1.textContent = 'Neutral';
-        }
-
-        // Mostrar valores en sus elementos correspondientes
-        if (this.texview2) this.texview2.textContent = ratioLiquidaciones.toFixed(2);
-        if (this.texview3) this.texview3.textContent = ultimoCierre.toFixed(2);
-        if (this.texview4) this.texview4.textContent = ultimaLiquidacionShort.toFixed(2);
+        // =================== Estado del sistema ===================
+        if (this.texview5) this.texview5.textContent = '🟢 System ONN';
     }
 
-    // Método auxiliar para obtener valores de manera segura
+    // =================== Acceso seguro a arrays con índice negativo ===================
     getValueSafely(array, index) {
-        if (!array || !Array.isArray(array) || array.length === 0) {
-            return 0;
-        }
-        
-        const actualIndex = index < 0 ? array.length + index : index;
-        
-        if (actualIndex < 0 || actualIndex >= array.length) {
-            return 0;
-        }
-        
-        return array[actualIndex].value || 0;
+        if (!Array.isArray(array) || array.length === 0) return undefined;
+        const i = index < 0 ? array.length + index : index;
+        return i >= 0 && i < array.length ? array[i] : undefined;
     }
-    
-    
 }
 
-// Instanciar la clase y hacerla accesible globalmente
-window.manejadorAlertas = new ManejadorAlertas();
+// =================== Inicializar manejador al cargar la página ===================
+document.addEventListener('DOMContentLoaded', () => {
+    window.manejadorAlertas = new ManejadorAlertas();
+});
