@@ -1,0 +1,267 @@
+
+/* Reinicio de márgenes y fuentes */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'IBM Plex Mono', 'Consolas', monospace;
+}
+
+/* Estilos generales del body y fondo */
+html, body {
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+    background: #080a12;
+    color: #ffffff;
+}
+
+/* Contenedor principal de la app */
+#app-container {
+    display: flex;
+    flex-direction: column;
+    height: 94vh;
+    width: 100vw;
+    align-items: center; /* Centra horizontalmente los hijos */
+}
+
+/* Controles superiores - área de alertas */
+#controls-top {
+    padding: 6px 10px;
+    background: linear-gradient(to bottom, #1e243a, #111520);
+    border-bottom: 1px solid #2c3353;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    z-index: 10;
+    width: 100%;
+    display: flex;
+    justify-content: center; /* Centra el contenido horizontalmente */
+    align-items: center;
+}
+
+/* Contenedor de alertas */
+#alertas {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+/* Elementos de texto de alerta */
+#texview1, #texview2, #texview3, #texview4 {
+    background: linear-gradient(to bottom, #2e354f, #1a1f33);
+    color: #ffffff;
+    padding: 6px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    border-radius: 3px;
+    border: 2px solid #4b567f;
+    box-shadow:
+        inset 0 1px 0 rgba(255,255,255,0.15),
+        0 1px 2px rgba(0,0,0,0.6),
+        0 0 2px rgba(50, 70, 120, 0.4);
+    text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.6);
+    min-width: 90px;
+    text-align: center;
+}
+
+/* Controles del medio - indicadores y timeframes */
+#controls-middle {
+    display: flex;
+    justify-content: center; /* Centra contenido horizontalmente */
+    align-items: center;
+    gap: 20px;
+    padding: 6px 10px;
+    background: linear-gradient(to bottom, #1e243a, #111520);
+    border-bottom: 1px solid #2c3353;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+    z-index: 10;
+    width: 100%;
+}
+
+/* Contenedor agrupado que alinea selectores e intervalos */
+#selector-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 25px;
+    justify-content: center; /* Centra el grupo */
+    width: 100%;
+}
+
+/* Selector de indicadores */
+#indicator-selector {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    justify-content: center;
+}
+
+/* Estilo individual de cada checkbox + etiqueta */
+#indicator-selector label {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #b8bfd8;
+    padding: 4px 6px;
+    cursor: pointer;
+    border-radius: 3px;
+    border: 2px solid #4b567f;
+    background: #1a1f33;
+    box-shadow:
+        inset 0 1px 2px rgba(255, 255, 255, 0.05),
+        0 1px 2px rgba(0, 0, 0, 0.5);
+    text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.4);
+}
+
+/* Hover sobre los labels */
+#indicator-selector label:hover {
+    color: #ffffff;
+    border-color: #6b78ff;
+}
+
+/* Checkbox custom */
+#indicator-selector input[type="checkbox"] {
+    appearance: none;
+    width: 13px;
+    height: 13px;
+    background: linear-gradient(to bottom, #1a1f33, #2e354f);
+    border: 2px solid #4b567f;
+    border-radius: 2px;
+    cursor: pointer;
+    position: relative;
+    box-shadow: 
+        inset 0 1px 3px rgba(0, 0, 0, 0.4),
+        0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+/* Checkbox activado */
+#indicator-selector input[type="checkbox"]:checked {
+    background: linear-gradient(to bottom, #3f4996, #2a3170);
+    border-color: #5f75f0;
+}
+
+/* Icono del checkbox activo */
+#indicator-selector input[type="checkbox"]:checked::after {
+    content: "🟢";
+    position: absolute;
+    color: #ffffff;
+    font-size: 9px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.6);
+}
+
+/* Contenedor de botones de tiempo */
+#timeframes {
+    display: flex;
+    gap: 6px;
+    justify-content: center;
+}
+
+/* Botones individuales de timeframe */
+.timeframe-btn {
+    background: linear-gradient(to bottom, #2e354f, #1a1f33);
+    color: #b8bfd8;
+    padding: 5px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: 3px;
+    min-width: 42px;
+    text-align: center;
+    border: 2px solid #4b567f;
+    box-shadow: 
+        inset 0 1px 0 rgba(255, 255, 255, 0.1),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.3),
+        0 1px 2px rgba(0, 0, 0, 0.4);
+    text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.5);
+    transition: all 0.15s ease;
+}
+
+/* Hover en los botones de timeframe */
+.timeframe-btn:hover {
+    background: linear-gradient(to bottom, #394067, #232842);
+    color: #ffffff;
+    border-color: #6b78ff;
+}
+
+/* Botón de timeframe activo */
+.timeframe-btn.active {
+    background: linear-gradient(to bottom, #4a56a6, #2f367f);
+    color: #ffffff;
+    border-color: #5f75f0;
+    box-shadow: 
+        inset 0 1px 2px rgba(255,255,255,0.05),
+        0 0 6px rgba(95, 117, 240, 0.3);
+}
+
+/* Efecto al presionar el botón */
+.timeframe-btn:active {
+    transform: translateY(1px);
+    box-shadow:
+        inset 0 2px 4px rgba(0, 0, 0, 0.5),
+        0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+/* Contenedor principal del gráfico */
+#chart-container {
+    flex: 1;
+    width: 100%;
+    height: 100%;
+    position: relative;
+    background: #080a12;
+    display: flex;
+    justify-content: center; /* Centra contenido dentro del gráfico */
+    align-items: center;
+}
+
+
+/* ... Todo tu CSS existente va aquí arriba ... */
+
+
+/* ========================================================= */
+/* ===== NUEVOS ESTILOS PARA EL BOTÓN DE EXPORTACIÓN ===== */
+/* ========================================================= */
+
+#exportarBtn {
+    /* Usamos un gradiente verde que coincide con el estilo visual */
+    background: linear-gradient(to bottom, #28a745, #1e7e34);
+    color: #ffffff; /* Texto blanco para un alto contraste */
+    
+    /* Mantenemos las mismas propiedades de tamaño, fuente y borde que timeframe-btn */
+    padding: 5px 15px; /* Un poco más de padding horizontal para el texto */
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: 3px;
+    text-align: center;
+    border: 2px solid #2a7e44; /* Borde de un verde oscuro a juego */
+
+    /* Replicamos exactamente las mismas sombras para una integración perfecta */
+    box-shadow: 
+        inset 0 1px 0 rgba(255, 255, 255, 0.15), /* Brillo interior superior */
+        inset 0 -1px 0 rgba(0, 0, 0, 0.4), /* Sombra interior inferior */
+        0 1px 2px rgba(0, 0, 0, 0.5); /* Sombra exterior */
+    
+    /* Sombra de texto para legibilidad */
+    text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.6);
+    
+    /* Transición suave para los efectos */
+    transition: all 0.15s ease;
+}
+
+/* Efecto hover: Hacemos el botón un poco más brillante */
+#exportarBtn:hover {
+    background: linear-gradient(to bottom, #32b554, #249241);
+    border-color: #38c172; /* Borde más claro */
+}
+
+/* Efecto al presionar: Replicamos el efecto de "hundimiento" de timeframe-btn */
+#exportarBtn:active {
+    transform: translateY(1px);
+    box-shadow:
+        inset 0 2px 4px rgba(0, 0, 0, 0.6), /* Sombra interior más profunda */
+        0 1px 0 rgba(255, 255, 255, 0.05); /* Se anula la sombra exterior */
+}
