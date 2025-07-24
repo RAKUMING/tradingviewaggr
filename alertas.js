@@ -42,7 +42,7 @@ class ManejadorAlertas {
         // =================== Mostrar tendencia EMA ===================
         if (this.texview1) {
             if (ema20 && ema50) {
-                const tendencia = ema20 > ema50 ? '📈 EMA Alcista' : '📉 EMA Bajista';
+                const tendencia = ema20 > ema50 ? '📈 Alcista' : '📉 Bajista';
                 this.texview1.textContent = tendencia;
             } else {
                 this.texview1.textContent = 'Tendencia EMA: N/A';
@@ -52,7 +52,7 @@ class ManejadorAlertas {
         // =================== Mostrar SuperTrend ===================
         if (this.texview2) {
             if (supertrend !== undefined) {
-                const tendenciaST = supertrend > 0 ? '📈 Supertrend Alcista' : '📉 Supertrend Bajista';
+                const tendenciaST = supertrend > 0 ? '📈 Sp Alcista' : '📉 Sp Bajista';
                 this.texview2.textContent = tendenciaST;
             } else {
                 this.texview2.textContent = 'Tendencia ST: N/A';
@@ -60,11 +60,11 @@ class ManejadorAlertas {
         }
 
         // =================== Mostrar Liquidaciones ===================
-        if (this.texview3) this.texview3.textContent = `Liq.SHORT: ${liqShort.toLocaleString('es-ES')}`;
-        if (this.texview4) this.texview4.textContent = `Liq.LONG: ${liqLong.toLocaleString('es-ES')}`;
+        if (this.texview3) this.texview3.textContent = `Liq.S: ${liqShort.toLocaleString('es-ES')}`;
+        if (this.texview4) this.texview4.textContent = `Liq.L: ${liqLong.toLocaleString('es-ES')}`;
 
         // =================== Estado del sistema ===================
-        if (this.texview5) this.texview5.textContent = '🟢 System ONN';
+        if (this.texview5) this.texview5.textContent = '🟢 ONN';
     }
 
     // =================== Acceso seguro a arrays con índice negativo ===================
