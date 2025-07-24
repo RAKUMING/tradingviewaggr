@@ -9,7 +9,7 @@
 
 /* Estilos generales del body y fondo */
 html, body {
-    height: 90%;
+    height: 100%;
     width: 100%;
     overflow: hidden;
     background: #080a12;
@@ -20,7 +20,7 @@ html, body {
 #app-container {
     display: flex;
     flex-direction: column;
-    height: 100vh;
+    height: 90vh;
     width: 100vw;
     align-items: center; /* Centra horizontalmente los hijos */
 }
