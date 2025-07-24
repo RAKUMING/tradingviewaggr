@@ -6,7 +6,7 @@ class ManejadorAlertas {
         this.texview2 = document.getElementById('texview2'); // SuperTrend: Alcista/Bajista
         this.texview3 = document.getElementById('texview3'); // Liquidación SHORT
         this.texview4 = document.getElementById('texview4'); // Liquidación LONG
-        this.texview5 = document.getElementById('texview5'); // Estado del sistema 🟢 ON
+
 
         this.latestIndicadoresData = {};     // Indicadores técnicos principales
         this.latestIndicadores2Data = {};    // Indicadores secundarios (como SuperTrend)
@@ -63,8 +63,7 @@ class ManejadorAlertas {
         if (this.texview3) this.texview3.textContent = `Liq.S: ${liqShort.toLocaleString('es-ES')}`;
         if (this.texview4) this.texview4.textContent = `Liq.L: ${liqLong.toLocaleString('es-ES')}`;
 
-        // =================== Estado del sistema ===================
-        if (this.texview5) this.texview5.textContent = '🟢 ONN';
+
     }
 
     // =================== Acceso seguro a arrays con índice negativo ===================
