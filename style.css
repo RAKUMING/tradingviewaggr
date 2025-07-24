@@ -19,7 +19,7 @@ html, body {
 #app-container {
     display: flex;
     flex-direction: column;
-    height: 60vh;
+    height: 92vh;
     width: 100vw;
     align-items: center;
 }
